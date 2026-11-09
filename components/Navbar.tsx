@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   HiHome,
   HiInformationCircle,
   HiBookOpen,
   HiUsers,
+  HiArrowRight,
 } from "react-icons/hi";
 
 const navLinks = [
@@ -19,170 +22,162 @@ const navLinks = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // the pill sits under the hovered link, falling back to the current page
+  const highlighted = hovered ?? pathname;
 
   return (
-    <header className="fixed top-0 z-50 w-full px-4 py-5">
-      <div className="container flex items-center justify-between h-20 px-6 mx-auto border-2 border-gray-600 shadow-2xl bg-black/95 backdrop-blur-sm rounded-3xl">
+    <header className={`fixed top-0 z-50 w-full px-4 transition-[padding] duration-500 ${scrolled ? "py-3" : "py-5"}`}>
+      <div
+        className={`container relative mx-auto flex items-center justify-between rounded-3xl border px-6 backdrop-blur-xl transition-all duration-500 ${
+          scrolled
+            ? "h-16 border-white/15 bg-black/70 shadow-[0_8px_40px_-12px_rgba(165,180,252,0.25)]"
+            : "h-20 border-white/10 bg-black/40"
+        }`}
+      >
+        {/* hairline highlight along the top edge */}
+        <span aria-hidden className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
         {/* Logo */}
-        <Link
-          href="/"
-          className="flex items-center gap-3 transition-opacity hover:opacity-80"
-        >
+        <Link href="/" className="group flex items-center gap-3">
           <div className="relative">
+            <span aria-hidden className="absolute inset-0 rounded-full bg-indigo-400/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
             <Image
               src="/ctl.png"
               alt="CTL"
-              width={48}
-              height={48}
-              className="object-contain"
+              width={44}
+              height={44}
+              priority
+              className="relative object-contain transition-transform duration-500 group-hover:rotate-[8deg] group-hover:scale-105"
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-bold tracking-tight text-white">
-              CLT
-            </span>
-            <span className="text-xs font-medium tracking-widest text-gray-400 uppercase">
+            <span className="text-2xl font-bold leading-none tracking-tight text-white">CLT</span>
+            <span className="mt-1 text-[10px] font-medium uppercase tracking-[0.25em] text-gray-400">
               Community Hub
             </span>
           </div>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="items-center hidden gap-1 md:flex">
+        <nav className="hidden items-center gap-1 md:flex" onMouseLeave={() => setHovered(null)}>
           {navLinks.map((link) => {
             const Icon = link.icon;
+            const active = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className="relative flex items-center gap-2 px-4 py-2 font-sans text-base font-semibold text-gray-300 transition-colors border-2 border-transparent rounded-lg group hover:text-white"
+                onMouseEnter={() => setHovered(link.href)}
+                aria-current={active ? "page" : undefined}
+                className={`relative flex items-center gap-2 rounded-xl px-4 py-2 font-sans text-[15px] font-semibold transition-colors ${
+                  active ? "text-white" : "text-gray-400 hover:text-white"
+                }`}
               >
-                <Icon className="w-5 h-5" />
-                <span className="font-semibold">{link.label}</span>
-                <span className="absolute bottom-0 left-1/2 h-0.5 w-0 bg-white transition-all duration-300 group-hover:left-4 group-hover:w-[calc(100%-32px)]" />
+                {highlighted === link.href && (
+                  <motion.span
+                    layoutId="nav-pill"
+                    className="absolute inset-0 rounded-xl border border-white/10 bg-white/[0.08]"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <Icon className="relative h-[18px] w-[18px]" />
+                <span className="relative">{link.label}</span>
               </Link>
             );
           })}
         </nav>
 
         {/* Desktop Actions */}
-        <div className="items-center hidden gap-3 md:flex">
+        <div className="hidden items-center gap-3 md:flex">
           <Link
             href="/signin"
-            className="px-4 py-2 font-sans text-base font-semibold text-gray-300 transition-colors border-2 border-gray-500 rounded-lg hover:text-white hover:bg-white/10"
+            className="rounded-xl border border-white/15 px-4 py-2 font-sans text-[15px] font-semibold text-gray-300 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
           >
             Sign In
           </Link>
-          <Link
-            href="/get-started"
-            className="px-5 py-2 font-sans text-base font-semibold text-black transition-colors bg-white rounded-lg hover:bg-gray-200"
-          >
-            Get Started
+          <Link href="/get-started" className="btn-primary group !rounded-xl px-5 py-2 text-[15px]">
+            <span className="relative z-10">Get Started</span>
+            <HiArrowRight className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            <span aria-hidden className="btn-sheen" />
           </Link>
         </div>
 
         {/* Mobile Menu Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center justify-center transition-colors rounded-lg md:hidden h-9 w-9 hover:bg-white/10"
+          className="flex h-10 w-10 items-center justify-center rounded-xl transition-colors hover:bg-white/10 md:hidden"
+          aria-expanded={isOpen}
         >
-          {isOpen ? (
-            <svg
-              className="w-5 h-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          ) : (
-            <svg
-              className="w-5 h-5 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          )}
+          <span className="relative block h-4 w-5">
+            <span className={`absolute left-0 top-0 h-0.5 w-5 rounded bg-white transition-all duration-300 ${isOpen ? "top-[7px] rotate-45" : ""}`} />
+            <span className={`absolute left-0 top-[7px] h-0.5 w-5 rounded bg-white transition-opacity duration-300 ${isOpen ? "opacity-0" : ""}`} />
+            <span className={`absolute left-0 top-[14px] h-0.5 w-5 rounded bg-white transition-all duration-300 ${isOpen ? "top-[7px] -rotate-45" : ""}`} />
+          </span>
           <span className="sr-only">Toggle menu</span>
         </button>
       </div>
 
       {/* Mobile Menu */}
-      {isOpen && (
-        <div className="fixed z-40 border-2 border-gray-600 shadow-2xl md:hidden inset-x-4 top-24 bg-black/95 backdrop-blur-sm rounded-3xl">
-          <div className="flex flex-col h-full">
-            {/* Mobile Header */}
-            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-600">
-              <Link
-                href="/"
-                className="flex items-center gap-2"
-                onClick={() => setIsOpen(false)}
-              >
-                <div className="relative">
-                  <Image
-                    src="/ctl.png"
-                    alt="CTL"
-                    width={32}
-                    height={32}
-                    className="object-contain"
-                  />
-                </div>
-                <span className="text-lg font-bold text-white">
-                  CLT Community Hub
-                </span>
-              </Link>
-            </div>
-
-            {/* Mobile Navigation */}
-            <nav className="flex-1 py-4 overflow-y-auto">
-              {navLinks.map((link) => {
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed inset-x-4 top-24 z-40 overflow-hidden rounded-3xl border border-white/15 bg-black/90 shadow-2xl backdrop-blur-xl md:hidden"
+          >
+            <nav className="py-3">
+              {navLinks.map((link, i) => {
                 const Icon = link.icon;
+                const active = pathname === link.href;
                 return (
-                  <Link
+                  <motion.div
                     key={link.href}
-                    href={link.href}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 mx-2 text-gray-300 transition-colors rounded-lg hover:bg-white/10 hover:text-white"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.04 * i }}
                   >
-                    <Icon className="w-6 h-6" />
-                    <span className="font-sans text-base font-semibold">
-                      {link.label}
-                    </span>
-                  </Link>
+                    <Link
+                      href={link.href}
+                      onClick={() => setIsOpen(false)}
+                      className={`mx-2 flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-white/10 hover:text-white ${
+                        active ? "bg-white/[0.08] text-white" : "text-gray-300"
+                      }`}
+                    >
+                      <Icon className="h-6 w-6" />
+                      <span className="font-sans text-base font-semibold">{link.label}</span>
+                    </Link>
+                  </motion.div>
                 );
               })}
             </nav>
 
-            {/* Mobile Actions */}
-            <div className="p-4 space-y-3 border-t border-gray-600">
+            <div className="space-y-3 border-t border-white/10 p-4">
               <Link
                 href="/signin"
-                className="block w-full px-4 py-2 font-sans text-base font-semibold text-center text-gray-300 transition-colors border-2 border-gray-500 rounded-lg hover:bg-white/10 hover:text-white"
+                className="block w-full rounded-xl border border-white/15 px-4 py-2.5 text-center font-sans text-base font-semibold text-gray-300 transition-colors hover:bg-white/10 hover:text-white"
               >
                 Sign In
               </Link>
-              <Link
-                href="/get-started"
-                className="block w-full px-4 py-2 font-sans text-base font-semibold text-center text-black transition-colors bg-white rounded-lg hover:bg-gray-200"
-              >
+              <Link href="/get-started" className="btn-primary flex w-full !rounded-xl px-4 py-2.5 text-base">
                 Get Started
               </Link>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

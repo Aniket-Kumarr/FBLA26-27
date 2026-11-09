@@ -4,7 +4,8 @@ import Providers from '@/components/Providers'
 
 export const metadata: Metadata = {
   title: 'CLT CommunityHub',
-  description: 'CLT CommunityHub',
+  description:
+    'Your all-in-one platform for academic success, resources, and community connection in Charlotte. Find clubs, non-profits, events, and services you need.',
 }
 
 export default function RootLayout({

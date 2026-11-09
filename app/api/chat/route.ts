@@ -116,9 +116,9 @@ export async function POST(request: NextRequest) {
       console.error('Clubs fetch failed (continuing without):', e);
     }
 
-    // Use Gemini 2.5 Flash (free tier in Google AI Studio; same key works)
+    // gemini-2.5-flash is no longer available to new API keys; use current Flash model
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
     // Build system prompt with static clubs knowledge + any dynamic RAG from Supabase
     const systemPrompt = `You are Community Hub, a helpful assistant for the CLT CommunityHub platform. Your role is to answer questions about clubs, organizations, classes, and community activities in Charlotte, NC.

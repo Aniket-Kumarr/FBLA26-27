@@ -1,11 +1,44 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { HiBookOpen, HiAcademicCap, HiUserGroup, HiX } from "react-icons/hi";
+import { HiBookOpen, HiAcademicCap, HiUserGroup, HiX, HiArrowRight, HiLockClosed } from "react-icons/hi";
+import PageBackdrop from "@/components/fx/PageBackdrop";
+import TiltCard from "@/components/fx/TiltCard";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+function ResourceRow({
+  Icon,
+  title,
+  body,
+  locked = false,
+}: {
+  Icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  body: string;
+  locked?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-5 p-5">
+      <div className="relative inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-gradient-to-br from-white/15 to-white/[0.02]">
+        <span aria-hidden className="absolute inset-0 rounded-2xl bg-indigo-400/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
+        <Icon className="relative h-7 w-7 text-white" />
+      </div>
+      <div className="flex-1 text-left">
+        <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
+          {title}
+          {locked && <HiLockClosed className="h-4 w-4 text-gray-500" aria-label="Sign-in required" />}
+        </h2>
+        <p className="text-sm text-gray-400">{body}</p>
+      </div>
+      <HiArrowRight className="h-5 w-5 shrink-0 text-gray-500 transition-all duration-300 group-hover:translate-x-1 group-hover:text-white" />
+    </div>
+  );
+}
 
 export default function ResourcesPage() {
   const router = useRouter();
@@ -22,115 +55,107 @@ export default function ResourcesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage: "url(/ctl.png)",
-          backgroundRepeat: "repeat",
-          backgroundSize: "180px 180px",
-        }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-900/30 via-transparent to-gray-900/20 pointer-events-none" />
+    <div className="bg-site relative min-h-screen overflow-hidden">
+      <PageBackdrop />
       <Navbar />
 
-      <section className="pt-32 pb-32 px-4 md:px-12 relative z-10">
-        <div className="w-full max-w-3xl mx-auto">
+      <section className="relative z-10 px-4 pb-32 pt-36 md:px-12">
+        <div className="mx-auto w-full max-w-3xl">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-8"
+            transition={{ duration: 0.8, ease: EASE }}
+            className="mb-10"
           >
-            <div className="bg-black border-2 border-gray-700 rounded-3xl p-8 md:p-12 shadow-2xl">
-              <h1
-                className="text-4xl md:text-5xl font-bold text-white mb-6"
-                style={{ fontFamily: "Nunito, sans-serif", fontWeight: 700 }}
-              >
-                Resources
-              </h1>
-              <p className="text-gray-400 text-lg leading-relaxed mb-8">
-                Tools and links to help you succeed at CLT CommunityHub.
-              </p>
-
-              <div className="space-y-4">
-                <button
-                  onClick={handleClubsMapClick}
-                  className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-gray-700 hover:border-gray-500 hover:bg-white/5 transition-all text-left group"
-                >
-                  <HiUserGroup className="h-8 w-8 text-gray-400 group-hover:text-white" />
-                  <div>
-                    <h2 className="text-xl font-semibold text-white">Clubs & Map</h2>
-                    <p className="text-gray-400 text-sm">Browse clubs and find your community on the dashboard.</p>
-                  </div>
-                </button>
-                <Link
-                  href="/join-us"
-                  className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-700 hover:border-gray-500 hover:bg-white/5 transition-all text-left group"
-                >
-                  <HiAcademicCap className="h-8 w-8 text-gray-400 group-hover:text-white" />
-                  <div>
-                    <h2 className="text-xl font-semibold text-white">Join Us</h2>
-                    <p className="text-gray-400 text-sm">Register to become part of CLT CommunityHub.</p>
-                  </div>
-                </Link>
-                <Link
-                  href="/get-started"
-                  className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-700 hover:border-gray-500 hover:bg-white/5 transition-all text-left group"
-                >
-                  <HiBookOpen className="h-8 w-8 text-gray-400 group-hover:text-white" />
-                  <div>
-                    <h2 className="text-xl font-semibold text-white">Get Started</h2>
-                    <p className="text-gray-400 text-sm">Create an account to access all features.</p>
-                  </div>
-                </Link>
-              </div>
-            </div>
+            <h1
+              className="mb-4 text-5xl font-bold tracking-tight text-white md:text-6xl"
+              style={{ fontFamily: "Nunito, sans-serif", fontWeight: 800 }}
+            >
+              <span className="text-shimmer">Resources</span>
+            </h1>
+            <p className="text-lg leading-relaxed text-gray-400 md:text-xl">
+              Tools and links to help you succeed at CLT CommunityHub.
+            </p>
           </motion.div>
+
+          <div className="space-y-4">
+            {[
+              { kind: "button" as const, Icon: HiUserGroup, title: "Clubs & Map", body: "Browse clubs and find your community on the dashboard.", locked: true },
+              { kind: "link" as const, href: "/join-us", Icon: HiAcademicCap, title: "Join Us", body: "Register to become part of CLT CommunityHub." },
+              { kind: "link" as const, href: "/get-started", Icon: HiBookOpen, title: "Get Started", body: "Create an account to access all features." },
+            ].map((item, i) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.15 + i * 0.1, ease: EASE }}
+              >
+                <TiltCard max={4}>
+                  {item.kind === "button" ? (
+                    <button onClick={handleClubsMapClick} className="block w-full">
+                      <ResourceRow Icon={item.Icon} title={item.title} body={item.body} locked={item.locked} />
+                    </button>
+                  ) : (
+                    <Link href={item.href} className="block">
+                      <ResourceRow Icon={item.Icon} title={item.title} body={item.body} />
+                    </Link>
+                  )}
+                </TiltCard>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Sign In Required Popup */}
-      {showSignInPopup && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm" onClick={() => setShowSignInPopup(false)}>
+      <AnimatePresence>
+        {showSignInPopup && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-black border-2 border-gray-700 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md"
+            onClick={() => setShowSignInPopup(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl md:text-3xl font-bold text-white font-sans">Sign In Required</h2>
-              <button
-                onClick={() => setShowSignInPopup(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <HiX className="h-6 w-6" />
-              </button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.3, ease: EASE }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative mx-4 w-full max-w-md overflow-hidden rounded-3xl border border-white/15 bg-black/80 p-8 shadow-[0_20px_80px_-20px_rgba(165,180,252,0.5)] backdrop-blur-xl"
+            >
+              <span aria-hidden className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="font-sans text-2xl font-bold text-white md:text-3xl">Sign In Required</h2>
+                <button
+                  onClick={() => setShowSignInPopup(false)}
+                  className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                  aria-label="Close"
+                >
+                  <HiX className="h-6 w-6" />
+                </button>
+              </div>
 
-            <p className="text-gray-300 mb-8 font-sans">
-              You must be signed in to access the Clubs and Map features. Please sign in to continue.
-            </p>
+              <p className="mb-8 font-sans text-gray-300">
+                You must be signed in to access the Clubs and Map features. Please sign in to continue.
+              </p>
 
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowSignInPopup(false)}
-                className="flex-1 px-6 py-3 font-sans font-semibold text-white transition-all duration-300 border-2 border-gray-600 hover:bg-gray-900 hover:border-gray-500 rounded-xl"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleGoToSignIn}
-                className="flex-1 px-6 py-3 font-sans font-bold text-black transition-all duration-300 bg-white text-black hover:bg-gray-100 rounded-xl"
-              >
-                Sign In
-              </button>
-            </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowSignInPopup(false)}
+                  className="flex-1 rounded-xl border border-white/20 px-6 py-3 font-sans font-semibold text-white transition-all duration-300 hover:border-white/40 hover:bg-white/5"
+                >
+                  Cancel
+                </button>
+                <button onClick={handleGoToSignIn} className="btn-primary flex-1 !rounded-xl px-6 py-3">
+                  Sign In
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
