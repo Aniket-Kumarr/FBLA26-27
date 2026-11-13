@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { prefersReducedMotion } from "@/components/a11y/A11yProvider";
 
 /**
  * "Community constellation" — a rotating network of glowing nodes (people/clubs)
@@ -66,7 +67,7 @@ export default function NetworkHero({ className = "", centered = false }: { clas
     const mount = mountRef.current;
     if (!mount) return;
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduceMotion = prefersReducedMotion();
     const small = window.innerWidth < 768;
 
     let renderer: THREE.WebGLRenderer;

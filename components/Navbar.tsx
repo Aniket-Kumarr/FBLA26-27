@@ -11,6 +11,7 @@ import {
   HiBookOpen,
   HiUsers,
   HiArrowRight,
+  HiDocumentText,
 } from "react-icons/hi";
 
 const navLinks = [
@@ -18,13 +19,24 @@ const navLinks = [
   { href: "/about", label: "About", icon: HiInformationCircle },
   { href: "/resources", label: "Resources", icon: HiBookOpen },
   { href: "/join-us", label: "Join Us", icon: HiUsers },
+  { href: "/sources", label: "Sources", icon: HiDocumentText },
 ];
 
-export default function Navbar() {
+/** `solid` drops the see-through blur, which is costly to draw over an animated page. */
+export default function Navbar({ solid = false }: { solid?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const pathname = usePathname();
+
+  // close the mobile menu on Escape or when the route changes
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setIsOpen(false);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+  useEffect(() => setIsOpen(false), [pathname]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -39,22 +51,24 @@ export default function Navbar() {
   return (
     <header className={`fixed top-0 z-50 w-full px-4 transition-[padding] duration-500 ${scrolled ? "py-3" : "py-5"}`}>
       <div
-        className={`container relative mx-auto flex items-center justify-between rounded-3xl border px-6 backdrop-blur-xl transition-all duration-500 ${
+        className={`container relative mx-auto flex items-center justify-between rounded-3xl border px-6 transition-all duration-500 ${
+          solid ? "bg-[#1c1917]" : "backdrop-blur-xl"
+        } ${
           scrolled
-            ? "h-16 border-white/15 bg-black/70 shadow-[0_8px_40px_-12px_rgba(165,180,252,0.25)]"
-            : "h-20 border-white/10 bg-black/40"
+            ? `h-16 border-white/15 ${solid ? "shadow-[0_8px_24px_-10px_rgba(0,0,0,0.6)]" : "bg-black/70 shadow-[0_8px_40px_-12px_rgba(165,180,252,0.25)]"}`
+            : `h-20 border-white/10 ${solid ? "" : "bg-black/40"}`
         }`}
       >
         {/* hairline highlight along the top edge */}
         <span aria-hidden className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
 
         {/* Logo */}
-        <Link href="/" className="group flex items-center gap-3">
+        <Link href="/" className="group flex items-center gap-3" aria-label="CLT CommunityHub home">
           <div className="relative">
             <span aria-hidden className="absolute inset-0 rounded-full bg-indigo-400/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
             <Image
               src="/ctl.png"
-              alt="CTL"
+              alt=""
               width={44}
               height={44}
               priority
@@ -70,7 +84,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-1 md:flex" onMouseLeave={() => setHovered(null)}>
+        <nav aria-label="Main" className="hidden items-center gap-1 lg:flex" onMouseLeave={() => setHovered(null)}>
           {navLinks.map((link) => {
             const Icon = link.icon;
             const active = pathname === link.href;
@@ -91,7 +105,7 @@ export default function Navbar() {
                     transition={{ type: "spring", stiffness: 400, damping: 32 }}
                   />
                 )}
-                <Icon className="relative h-[18px] w-[18px]" />
+                <Icon aria-hidden="true" className="relative h-[18px] w-[18px]" />
                 <span className="relative">{link.label}</span>
               </Link>
             );
@@ -99,7 +113,7 @@ export default function Navbar() {
         </nav>
 
         {/* Desktop Actions */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           <Link
             href="/signin"
             className="rounded-xl border border-white/15 px-4 py-2 font-sans text-[15px] font-semibold text-gray-300 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
@@ -115,16 +129,18 @@ export default function Navbar() {
 
         {/* Mobile Menu Button */}
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl transition-colors hover:bg-white/10 md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-xl transition-colors hover:bg-white/10 lg:hidden"
           aria-expanded={isOpen}
+          aria-controls="mobile-menu"
         >
-          <span className="relative block h-4 w-5">
+          <span aria-hidden="true" className="relative block h-4 w-5">
             <span className={`absolute left-0 top-0 h-0.5 w-5 rounded bg-white transition-all duration-300 ${isOpen ? "top-[7px] rotate-45" : ""}`} />
             <span className={`absolute left-0 top-[7px] h-0.5 w-5 rounded bg-white transition-opacity duration-300 ${isOpen ? "opacity-0" : ""}`} />
             <span className={`absolute left-0 top-[14px] h-0.5 w-5 rounded bg-white transition-all duration-300 ${isOpen ? "top-[7px] -rotate-45" : ""}`} />
           </span>
-          <span className="sr-only">Toggle menu</span>
+          <span className="sr-only">{isOpen ? "Close menu" : "Open menu"}</span>
         </button>
       </div>
 
@@ -132,13 +148,14 @@ export default function Navbar() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="mobile-menu"
             initial={{ opacity: 0, y: -12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 0.98 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-x-4 top-24 z-40 overflow-hidden rounded-3xl border border-white/15 bg-black/90 shadow-2xl backdrop-blur-xl md:hidden"
+            className="fixed inset-x-4 top-24 z-40 overflow-hidden rounded-3xl border border-white/15 bg-black/90 shadow-2xl backdrop-blur-xl lg:hidden"
           >
-            <nav className="py-3">
+            <nav aria-label="Mobile" className="py-3">
               {navLinks.map((link, i) => {
                 const Icon = link.icon;
                 const active = pathname === link.href;
@@ -152,11 +169,12 @@ export default function Navbar() {
                     <Link
                       href={link.href}
                       onClick={() => setIsOpen(false)}
+                      aria-current={active ? "page" : undefined}
                       className={`mx-2 flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-white/10 hover:text-white ${
                         active ? "bg-white/[0.08] text-white" : "text-gray-300"
                       }`}
                     >
-                      <Icon className="h-6 w-6" />
+                      <Icon aria-hidden="true" className="h-6 w-6" />
                       <span className="font-sans text-base font-semibold">{link.label}</span>
                     </Link>
                   </motion.div>

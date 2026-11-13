@@ -19,7 +19,7 @@ export default function DashboardResourcesPage() {
       <div className="absolute inset-0 bg-gradient-to-b from-gray-900/30 via-transparent to-gray-900/20 pointer-events-none" />
       <DashboardNavbar />
 
-      <section className="pt-32 pb-32 px-4 md:px-12 relative z-10">
+      <main id="main" tabIndex={-1} className="outline-none pt-32 pb-32 px-4 md:px-12 relative z-10">
         <div className="w-full max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -43,7 +43,7 @@ export default function DashboardResourcesPage() {
                   href="/dashboard"
                   className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-700 hover:border-gray-500 hover:bg-white/5 transition-all text-left group"
                 >
-                  <HiMap className="h-8 w-8 text-gray-400 group-hover:text-white" />
+                  <HiMap aria-hidden="true" className="h-8 w-8 text-gray-400 group-hover:text-white" />
                   <div>
                     <h2 className="text-xl font-semibold text-white">Clubs & Map</h2>
                     <p className="text-gray-400 text-sm">Browse clubs and find your community on the dashboard.</p>
@@ -53,7 +53,7 @@ export default function DashboardResourcesPage() {
                   href="/dashboard"
                   className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-700 hover:border-gray-500 hover:bg-white/5 transition-all text-left group"
                 >
-                  <HiUserGroup className="h-8 w-8 text-gray-400 group-hover:text-white" />
+                  <HiUserGroup aria-hidden="true" className="h-8 w-8 text-gray-400 group-hover:text-white" />
                   <div>
                     <h2 className="text-xl font-semibold text-white">All Clubs</h2>
                     <p className="text-gray-400 text-sm">View all available clubs and their details.</p>
@@ -63,7 +63,7 @@ export default function DashboardResourcesPage() {
                   href="/join-us"
                   className="flex items-center gap-4 p-4 rounded-xl border-2 border-gray-700 hover:border-gray-500 hover:bg-white/5 transition-all text-left group"
                 >
-                  <HiAcademicCap className="h-8 w-8 text-gray-400 group-hover:text-white" />
+                  <HiAcademicCap aria-hidden="true" className="h-8 w-8 text-gray-400 group-hover:text-white" />
                   <div>
                     <h2 className="text-xl font-semibold text-white">Join Us</h2>
                     <p className="text-gray-400 text-sm">Register to become part of CLT CommunityHub.</p>
@@ -73,7 +73,7 @@ export default function DashboardResourcesPage() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </main>
     </div>
   );
 }

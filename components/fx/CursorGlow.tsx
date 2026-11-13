@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { prefersReducedMotion } from "@/components/a11y/A11yProvider";
 
 /** A soft indigo spotlight that follows the cursor across the page (mouse devices only). */
 export default function CursorGlow() {
@@ -10,7 +11,7 @@ export default function CursorGlow() {
     const el = ref.current;
     if (!el) return;
     if (!window.matchMedia("(pointer: fine)").matches) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
 
     let x = window.innerWidth / 2;
     let y = window.innerHeight / 3;

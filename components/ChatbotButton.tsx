@@ -195,6 +195,7 @@ export default function ChatbotButton() {
                             exit={{ opacity: 0, scale: 0.8 }}
                             transition={{ duration: 0.2 }}
                             onClick={handleCloseChat}
+                            aria-label="Close chat"
                             className="absolute z-10 flex items-center justify-center w-10 h-10 text-gray-300 transition-colors bg-black border border-gray-500 rounded-full shadow-lg -top-2 -left-2 hover:text-white hover:bg-gray-900"
                         >
                             <HiX className="w-5 h-5" />
@@ -206,6 +207,7 @@ export default function ChatbotButton() {
                                 exit={{ opacity: 0, scale: 0.8 }}
                                 transition={{ duration: 0.2, delay: 0.05 }}
                                 onClick={handleClearChat}
+                                aria-label="Clear chat history"
                                 className="absolute z-10 flex items-center justify-center w-10 h-10 text-gray-300 transition-colors bg-black border border-gray-500 rounded-full shadow-lg -top-2 left-9 hover:text-red-500 hover:bg-gray-900"
                             >
                                 <HiTrash className="w-5 h-5" />
@@ -253,10 +255,12 @@ export default function ChatbotButton() {
                                     }
                                 }}
                                 className="relative flex-shrink-0 w-10 h-10 cursor-pointer"
+                                aria-label={stage === "closed" ? "Open the CLT CommunityHub assistant" : "Close the assistant"}
+                                aria-expanded={stage !== "closed"}
                             >
                                 <Image
                                     src="/ctl.png"
-                                    alt="CTL Logo"
+                                    alt=""
                                     fill
                                     className="object-cover"
                                 />
@@ -273,13 +277,15 @@ export default function ChatbotButton() {
                                         type="text"
                                         value={message}
                                         onChange={(e) => setMessage(e.target.value)}
-                                        onKeyPress={handleKeyPress}
+                                        onKeyDown={handleKeyPress}
                                         placeholder="Type your message..."
+                                        aria-label="Message the CLT CommunityHub assistant"
                                         className="flex-1 min-w-0 text-sm text-white placeholder-gray-300 bg-transparent outline-none"
                                         onClick={(e) => e.stopPropagation()}
                                     />
                                     <button
                                         onClick={handleSend}
+                                        aria-label="Send message"
                                         className="flex items-center justify-center flex-shrink-0 w-8 h-8 text-white transition-colors cursor-pointer hover:text-gray-300"
                                     >
                                         <HiPaperAirplane className="w-5 h-5" />
@@ -293,7 +299,7 @@ export default function ChatbotButton() {
                     {chatReady && (
                         <>
                             {/* Chat History */}
-                            <div className="flex-1 min-h-0 p-4 space-y-4 overflow-y-auto bg-black">
+                            <div className="flex-1 min-h-0 p-4 space-y-4 overflow-y-auto bg-black" role="log" aria-live="polite" aria-label="Chat messages">
                                 {/* Welcome Message - Show when chat opens and no messages yet */}
                                 {messages.length === 0 && (
                                     <motion.div
@@ -306,7 +312,7 @@ export default function ChatbotButton() {
                                             <div className="relative flex-shrink-0 w-8 h-8 flex items-center justify-center">
                                                 <Image
                                                     src="/ctl.png"
-                                                    alt="CTL Logo"
+                                                    alt=""
                                                     width={32}
                                                     height={32}
                                                     className="object-cover rounded-full"
@@ -344,7 +350,7 @@ export default function ChatbotButton() {
                                                     ) : (
                                                         <Image
                                                             src="/ctl.png"
-                                                            alt="CTL Logo"
+                                                            alt=""
                                                             fill
                                                             className="object-cover"
                                                         />
@@ -373,7 +379,7 @@ export default function ChatbotButton() {
                                     <div className="relative flex-shrink-0 w-7 h-7">
                                         <Image
                                             src="/ctl.png"
-                                            alt="CTL Logo"
+                                            alt=""
                                             fill
                                             className="object-cover"
                                         />
@@ -382,14 +388,16 @@ export default function ChatbotButton() {
                                         type="text"
                                         value={message}
                                         onChange={(e) => setMessage(e.target.value)}
-                                        onKeyPress={handleKeyPress}
+                                        onKeyDown={handleKeyPress}
                                         placeholder="Type a message..."
+                                        aria-label="Message the CLT CommunityHub assistant"
                                         className="flex-1 min-w-0 text-base text-white placeholder-gray-300 bg-transparent outline-none"
                                         style={{ maxWidth: '100%' }}
                                         autoFocus
                                     />
                                     <button
                                         onClick={handleSend}
+                                        aria-label="Send message"
                                         className="flex-shrink-0 text-white transition-colors hover:text-gray-300"
                                     >
                                         <HiPaperAirplane className="w-6 h-6" />

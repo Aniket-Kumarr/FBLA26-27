@@ -9,7 +9,7 @@ const JOIN_FORM_URL =
 
 const steps = [
   "Click the button below to open the official form",
-  "Fill out your details - takes about a minute",
+  "Fill out your details (it takes about a minute)",
   "We'll get you connected to CLT CommunityHub",
 ];
 
@@ -27,7 +27,7 @@ export default function DashboardJoinUsPage() {
       <div className="absolute inset-0 bg-gradient-to-b from-gray-900/30 via-transparent to-gray-900/20 pointer-events-none" />
       <DashboardNavbar />
 
-      <section className="pt-32 pb-32 px-4 md:px-12 relative z-10 flex items-center justify-center min-h-[calc(100vh-6rem)]">
+      <main id="main" tabIndex={-1} className="outline-none pt-32 pb-32 px-4 md:px-12 relative z-10 flex items-center justify-center min-h-[calc(100vh-6rem)]">
         <div className="w-full max-w-2xl mx-auto">
           {/* Official join card */}
           <motion.div
@@ -37,7 +37,7 @@ export default function DashboardJoinUsPage() {
             className="bg-black border-2 border-gray-700 rounded-3xl p-8 md:p-12 shadow-2xl text-center"
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-600 bg-gray-900/50 text-gray-400 text-sm font-medium mb-8">
-              <HiClipboardList className="h-4 w-4" />
+              <HiClipboardList aria-hidden="true" className="h-4 w-4" />
               Official registration
             </div>
 
@@ -48,7 +48,7 @@ export default function DashboardJoinUsPage() {
               Join CLT CommunityHub
             </h1>
             <p className="text-gray-400 text-lg md:text-xl mb-10 max-w-md mx-auto">
-              Become part of the community. Use the form below to register - we&apos;ll
+              Become part of the community. Use the form below to register, and we&apos;ll
               reach out once you&apos;re in.
             </p>
 
@@ -61,12 +61,12 @@ export default function DashboardJoinUsPage() {
               whileTap={{ scale: 0.98 }}
             >
               Open registration form
-              <HiExternalLink className="h-5 w-5" />
+              <HiExternalLink aria-hidden="true" className="h-5 w-5" />
             </motion.a>
 
             {/* Steps */}
             <div className="mt-12 pt-10 border-t border-gray-700 text-left">
-              <p className="text-gray-500 text-sm font-semibold uppercase tracking-wider mb-4">
+              <p className="text-gray-400 text-sm font-semibold uppercase tracking-wider mb-4">
                 How it works
               </p>
               <ul className="space-y-4">
@@ -79,7 +79,7 @@ export default function DashboardJoinUsPage() {
                     className="flex items-start gap-3 text-gray-300"
                   >
                     <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center">
-                      <HiCheck className="h-3.5 w-3.5 text-white" />
+                      <HiCheck aria-hidden="true" className="h-3.5 w-3.5 text-white" />
                     </span>
                     <span className="font-sans">{step}</span>
                   </motion.li>
@@ -88,7 +88,7 @@ export default function DashboardJoinUsPage() {
             </div>
           </motion.div>
 
-          <p className="text-center text-gray-500 text-sm mt-8">
+          <p className="text-center text-gray-400 text-sm mt-8">
             <a
               href="/dashboard"
               className="text-gray-400 hover:text-white transition-colors"
@@ -97,7 +97,7 @@ export default function DashboardJoinUsPage() {
             </a>
           </p>
         </div>
-      </section>
+      </main>
     </div>
   );
 }

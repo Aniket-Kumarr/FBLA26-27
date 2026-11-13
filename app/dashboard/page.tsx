@@ -14,8 +14,10 @@ import {
     HiCheck,
 } from "react-icons/hi";
 import { supabaseClient } from "@/lib/supabase-client";
+import { useDialog } from "@/lib/useDialog";
 
-const ClubsMap = dynamic(() => import("@/components/ClubsMap"), {
+// the 3D GPS that holds the map (same component as the home page)
+const Gps = dynamic(() => import("@/components/objects/Gps"), {
     ssr: false,
 });
 
@@ -104,6 +106,17 @@ export default function DashboardPage() {
         new Set(),
     );
     const [reviews, setReviews] = useState<Review[]>([]);
+    const [activeSuggestion, setActiveSuggestion] = useState(-1);
+    const infoRef = useDialog<HTMLDivElement>(showInfo, () => setShowInfo(false));
+    const reviewRef = useDialog<HTMLDivElement>(showReviewPopup && !!reviewClub, () => setShowReviewPopup(false));
+
+    const openReview = (club: Club) => {
+        setReviewClub(club);
+        setReviewRating(0);
+        setReviewComment("");
+        setReviewSubmitted(false);
+        setShowReviewPopup(true);
+    };
 
     //  use effect to relaod and mount the page when saving to object.localstroage prop
     useEffect(() => {
@@ -217,6 +230,25 @@ export default function DashboardPage() {
         setSelectedClubId(club.id);
         setSearchQuery(club.name);
         setDisplayCount(8);
+        setActiveSuggestion(-1);
+    };
+
+    // Combobox keyboard support: arrows move through suggestions, Enter picks one, Escape clears
+    const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "ArrowDown" && suggestions.length) {
+            e.preventDefault();
+            setActiveSuggestion((i) => (i + 1) % suggestions.length);
+        } else if (e.key === "ArrowUp" && suggestions.length) {
+            e.preventDefault();
+            setActiveSuggestion((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+        } else if (e.key === "Enter" && activeSuggestion >= 0 && suggestions[activeSuggestion]) {
+            e.preventDefault();
+            handleSuggestionClick(suggestions[activeSuggestion]);
+        } else if (e.key === "Escape") {
+            setSearchQuery("");
+            setSelectedClubId(null);
+            setActiveSuggestion(-1);
+        }
     };
 
     const displayedClubs = selectedClubId
@@ -249,7 +281,7 @@ export default function DashboardPage() {
             <DashboardNavbar />
             <ChatbotButton />
 
-            <section className="pt-32 pb-24 px-4 md:px-12">
+            <main id="main" tabIndex={-1} className="pt-32 pb-24 px-4 md:px-12 outline-none">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -264,11 +296,13 @@ export default function DashboardPage() {
                             Dashboard
                         </h1>
                         <button
+                            type="button"
                             onClick={() => setShowInfo(true)}
-                            className="text-gray-400 hover:text-white transition-colors"
-                            aria-label="Dashboard information"
+                            className="rounded-full text-gray-300 hover:text-white transition-colors"
+                            aria-label="How to use the dashboard"
+                            aria-haspopup="dialog"
                         >
-                            <HiInformationCircle className="h-8 w-8 md:h-10 md:w-10" />
+                            <HiInformationCircle aria-hidden="true" className="h-8 w-8 md:h-10 md:w-10" />
                         </button>
                     </div>
 
@@ -278,6 +312,10 @@ export default function DashboardPage() {
                             onClick={() => setShowInfo(false)}
                         >
                             <motion.div
+                                ref={infoRef}
+                                role="dialog"
+                                aria-modal="true"
+                                aria-labelledby="dashboard-guide-title"
                                 initial={{ opacity: 0, scale: 0.7 }}
                                 animate={{ opacity: 1, scale: 0.85 }}
                                 transition={{ duration: 0.2 }}
@@ -285,14 +323,16 @@ export default function DashboardPage() {
                                 className="bg-black border-2 border-gray-700 rounded-3xl p-8 max-w-2xl w-full mx-4 shadow-2xl"
                             >
                                 <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-3xl md:text-4xl font-bold text-white font-sans">
+                                    <h2 id="dashboard-guide-title" className="text-3xl md:text-4xl font-bold text-white font-sans">
                                         Dashboard Guide
                                     </h2>
                                     <button
+                                        type="button"
                                         onClick={() => setShowInfo(false)}
-                                        className="text-gray-400 hover:text-white transition-colors"
+                                        aria-label="Close dashboard guide"
+                                        className="text-gray-300 hover:text-white transition-colors"
                                     >
-                                        <HiX className="h-6 w-6" />
+                                        <HiX aria-hidden="true" className="h-6 w-6" />
                                     </button>
                                 </div>
 
@@ -302,8 +342,9 @@ export default function DashboardPage() {
                                             Resource Locations Map
                                         </h3>
                                         <p className="text-gray-400">
-                                            Use the interactive map to see all resource locations.
-                                            Click on any marker to see the name.
+                                            Press the screen of the GPS to pull out the map of all
+                                            resource locations. Select any pin, or a name in the list
+                                            beside the map, to see its details.
                                         </p>
                                     </div>
 
@@ -312,9 +353,9 @@ export default function DashboardPage() {
                                             Search Functionality
                                         </h3>
                                         <p className="text-gray-400">
-                                            Type in the search bar to find the service. Click on a
-                                            suggestion to zoom into that club&apos;s location on the
-                                            map and filter the clubs list below.
+                                            Type in the search bar to find a club, service or location.
+                                            Use the arrow keys or your mouse to pick a suggestion; the
+                                            GPS sets it as your destination and the list below is filtered.
                                         </p>
                                     </div>
 
@@ -337,8 +378,7 @@ export default function DashboardPage() {
                                         </h3>
                                         <p className="text-gray-400">
                                             Use the navigation bar at the top to access Home, About,
-                                            Resources, Join Us, Reference Page, or log out of your
-                                            account.
+                                            Resources, Join Us, Sources, or log out of your account.
                                         </p>
                                     </div>
 
@@ -347,12 +387,14 @@ export default function DashboardPage() {
                                             Reviews
                                         </h3>
                                         <p className="text-gray-400">
-                                            Click on any club or service to leave a review.
+                                            Select &quot;Leave Review&quot; on any listing to rate it from one
+                                            to five stars and add an anonymous comment.
                                         </p>
                                     </div>
                                 </div>
 
                                 <button
+                                    type="button"
                                     onClick={() => setShowInfo(false)}
                                     className="mt-6 w-full bg-black border-2 border-gray-600 text-white hover:bg-gray-900 hover:border-gray-500 px-6 py-3 rounded-xl transition-all duration-300 font-sans font-semibold"
                                 >
@@ -367,38 +409,57 @@ export default function DashboardPage() {
                             Locations
                         </h2>
                         <div className="mb-6">
+                            <label htmlFor="listing-search" className="mb-2 block text-sm font-semibold text-gray-300">
+                                Search listings by name, location or meeting time
+                            </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <HiSearch className="h-5 w-5 text-gray-500" />
+                                    <HiSearch aria-hidden="true" className="h-5 w-5 text-gray-400" />
                                 </div>
                                 <input
-                                    type="text"
-                                    placeholder="Search for services..."
+                                    id="listing-search"
+                                    type="search"
+                                    role="combobox"
+                                    aria-autocomplete="list"
+                                    aria-expanded={suggestions.length > 0}
+                                    aria-controls="listing-suggestions"
+                                    aria-activedescendant={activeSuggestion >= 0 && suggestions[activeSuggestion] ? `suggestion-${suggestions[activeSuggestion].id}` : undefined}
+                                    autoComplete="off"
+                                    placeholder="e.g. tutoring, STEM, Ballantyne..."
                                     value={searchQuery}
+                                    onKeyDown={onSearchKeyDown}
                                     onChange={(e) => {
                                         setSearchQuery(e.target.value);
                                         setSelectedClubId(null);
+                                        setActiveSuggestion(-1);
                                     }}
-                                    className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors font-sans"
+                                    className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-400 focus:border-indigo-300 transition-colors font-sans [&::-webkit-search-cancel-button]:hidden"
                                 />
-                                {selectedClubId && (
+                                {searchQuery && (
                                     <button
+                                        type="button"
+                                        aria-label="Clear search"
                                         onClick={() => {
                                             setSearchQuery("");
                                             setSelectedClubId(null);
+                                            setActiveSuggestion(-1);
                                         }}
-                                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-white transition-colors"
+                                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-300 hover:text-white transition-colors"
                                     >
-                                        <HiX className="h-5 w-5" />
+                                        <HiX aria-hidden="true" className="h-5 w-5" />
                                     </button>
                                 )}
                                 {suggestions.length > 0 && (
-                                    <div className="absolute z-50 w-full mt-2 bg-black border-2 border-gray-700 rounded-xl overflow-hidden shadow-2xl">
-                                        {suggestions.map((club) => (
-                                            <button
+                                    <ul id="listing-suggestions" role="listbox" aria-label="Search suggestions" className="absolute z-50 w-full mt-2 bg-black border-2 border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+                                        {suggestions.map((club, i) => (
+                                            <li
                                                 key={club.id}
+                                                id={`suggestion-${club.id}`}
+                                                role="option"
+                                                aria-selected={i === activeSuggestion}
+                                                onMouseDown={(e) => e.preventDefault()}
                                                 onClick={() => handleSuggestionClick(club)}
-                                                className="w-full text-left px-4 py-3 hover:bg-gray-900 transition-colors border-b border-gray-800 last:border-b-0"
+                                                className={`w-full cursor-pointer text-left px-4 py-3 hover:bg-gray-900 transition-colors border-b border-gray-800 last:border-b-0 ${i === activeSuggestion ? "bg-gray-800" : ""}`}
                                             >
                                                 <div className="text-white font-semibold font-sans">
                                                     {club.name}
@@ -411,17 +472,33 @@ export default function DashboardPage() {
                                                         </div>
                                                     )}
                                                 {club.meetingTime && club.meetingTime !== "TBD" && (
-                                                    <div className="text-gray-500 text-xs font-sans mt-1">
+                                                    <div className="text-gray-400 text-xs font-sans mt-1">
                                                         {club.meetingTime}
                                                     </div>
                                                 )}
-                                            </button>
+                                            </li>
                                         ))}
-                                    </div>
+                                    </ul>
                                 )}
                             </div>
+                            <p role="status" className="sr-only">
+                                {searchQuery.trim() ? `${suggestions.length} suggestions, ${displayedClubs.length} matching listings` : ""}
+                            </p>
                         </div>
-                        <ClubsMap selectedClubId={selectedClubId} clubs={clubs} />
+                        <div className="rounded-3xl border border-white/10 bg-white/[0.02] px-4 py-6">
+                            <Gps
+                                listings={clubs}
+                                status={loading ? "loading" : "ready"}
+                                selectedId={selectedClubId}
+                                member
+                            />
+                            <p className="mx-auto max-w-xl text-center text-gray-300">
+                                Press the GPS screen to pull out the map. Pick a search suggestion first and the GPS sets it as your destination.
+                            </p>
+                        </div>
+                        <p className="mt-3 text-sm text-gray-300">
+                            Every pin on the map is also listed below with its location and meeting time, so you can browse without using the map.
+                        </p>
                     </div>
 
                     {/* Spotlight Section */}
@@ -461,14 +538,11 @@ export default function DashboardPage() {
                                                     Featured
                                                 </span>
                                                 <button
-                                                    onClick={() => {
-                                                        setReviewClub(spotlightClub);
-                                                        setReviewRating(0);
-                                                        setReviewComment("");
-                                                        setReviewSubmitted(false);
-                                                        setShowReviewPopup(true);
-                                                    }}
-                                                    className="text-gray-400 hover:text-yellow-400 transition-colors text-sm font-sans"
+                                                    type="button"
+                                                    aria-haspopup="dialog"
+                                                    aria-label={`Leave a review for ${spotlightClub.name}`}
+                                                    onClick={() => openReview(spotlightClub)}
+                                                    className="text-gray-300 hover:text-yellow-400 transition-colors text-sm font-sans"
                                                 >
                                                     Leave Review
                                                 </button>
@@ -485,10 +559,12 @@ export default function DashboardPage() {
                                                 {spotlightClub.description &&
                                                     spotlightClub.description.length > 100 && (
                                                         <button
+                                                            type="button"
+                                                            aria-expanded={expandedDescriptions.has(spotlightClub.id)}
                                                             onClick={() =>
                                                                 toggleDescription(spotlightClub.id)
                                                             }
-                                                            className="text-gray-500 hover:text-white text-xs mt-1 font-semibold transition-colors font-sans"
+                                                            className="text-gray-400 hover:text-white text-xs mt-1 font-semibold transition-colors font-sans"
                                                         >
                                                             {expandedDescriptions.has(spotlightClub.id)
                                                                 ? "Show less"
@@ -496,7 +572,7 @@ export default function DashboardPage() {
                                                         </button>
                                                     )}
                                             </div>
-                                            <div className="flex flex-col gap-2 text-xs text-gray-500 font-sans">
+                                            <div className="flex flex-col gap-2 text-xs text-gray-400 font-sans">
                                                 {spotlightClub.location &&
                                                     spotlightClub.location !== "TBD" &&
                                                     spotlightClub.location !== "Location TBD" && (
@@ -526,44 +602,26 @@ export default function DashboardPage() {
                                 ? clubs.find((c) => c.id === selectedClubId)?.name || "Club"
                                 : searchQuery.trim()
                                     ? `Search Results (${displayedClubs.length})`
-                                    : "All Clubs"}
+                                    : "All Listings"}
                         </h2>
                     </div>
 
                     {loading ? (
-                        <div className="text-center py-12">
-                            <p className="text-gray-400 text-lg font-sans">
-                                Loading clubs...
+                        <div className="text-center py-12" role="status">
+                            <p className="text-gray-300 text-lg font-sans">
+                                Loading listings...
                             </p>
                         </div>
                     ) : displayedClubs.length === 0 ? (
                         <div className="text-center py-12">
-                            <p className="text-gray-400 text-lg font-sans mb-4">
-                                No clubs found.
+                            <p className="text-white text-lg font-semibold font-sans mb-2" role="status">
+                                {clubs.length === 0 ? "Listings are unavailable right now." : "No listings match your search."}
                             </p>
-                            {clubs.length === 0 && !loading && (
-                                <div className="text-gray-500 text-sm font-sans space-y-2">
-                                    <p>
-                                        Please check the browser console (F12) for debugging
-                                        information.
-                                    </p>
-                                    <p>Make sure:</p>
-                                    <ul className="list-disc list-inside mt-2 space-y-1">
-                                        <li>Your Supabase table is named &quot;listings&quot;</li>
-                                        <li>The table has data</li>
-                                        <li>Row Level Security (RLS) allows public read access</li>
-                                        <li>
-                                            Column names match: name, description, members, location,
-                                            meeting_time, lat, lng
-                                        </li>
-                                    </ul>
-                                </div>
-                            )}
-                            {clubs.length > 0 && (
-                                <p className="text-gray-500 text-sm font-sans">
-                                    No clubs match your search criteria.
-                                </p>
-                            )}
+                            <p className="text-gray-300 text-sm font-sans">
+                                {clubs.length === 0
+                                    ? "Please refresh the page in a moment. If the problem continues, contact us through the Join Us page."
+                                    : "Try a shorter word, a category such as \"STEM\", or a neighborhood name."}
+                            </p>
                         </div>
                     ) : (
                         <>
@@ -605,14 +663,11 @@ export default function DashboardPage() {
                                                                     {club.name}
                                                                 </h3>
                                                                 <button
-                                                                    onClick={() => {
-                                                                        setReviewClub(club);
-                                                                        setReviewRating(0);
-                                                                        setReviewComment("");
-                                                                        setReviewSubmitted(false);
-                                                                        setShowReviewPopup(true);
-                                                                    }}
-                                                                    className="text-gray-400 hover:text-yellow-400 transition-colors text-sm font-sans"
+                                                                    type="button"
+                                                                    aria-haspopup="dialog"
+                                                                    aria-label={`Leave a review for ${club.name}`}
+                                                                    onClick={() => openReview(club)}
+                                                                    className="shrink-0 pl-3 text-gray-300 hover:text-yellow-400 transition-colors text-sm font-sans"
                                                                 >
                                                                     Leave Review
                                                                 </button>
@@ -627,8 +682,10 @@ export default function DashboardPage() {
                                                                 {club.description &&
                                                                     club.description.length > 100 && (
                                                                         <button
+                                                                            type="button"
+                                                                            aria-expanded={expandedDescriptions.has(club.id)}
                                                                             onClick={() => toggleDescription(club.id)}
-                                                                            className="text-gray-500 hover:text-white text-xs mt-1 font-semibold transition-colors font-sans"
+                                                                            className="text-gray-400 hover:text-white text-xs mt-1 font-semibold transition-colors font-sans"
                                                                         >
                                                                             {expandedDescriptions.has(club.id)
                                                                                 ? "Show less"
@@ -649,16 +706,18 @@ export default function DashboardPage() {
                                                                             className=" border border-gray-700 rounded-lg p-3"
                                                                         >
                                                                             <div className="flex items-center gap-1 mb-1">
+                                                                                <span className="sr-only">Rated {review.rating} out of 5 stars.</span>
                                                                                 {[...Array(review.rating)].map(
                                                                                     (_, i) => (
                                                                                         <HiStar
+                                                                                            aria-hidden="true"
                                                                                             key={i}
                                                                                             className="text-yellow-400 text-sm"
                                                                                         />
                                                                                     ),
                                                                                 )}
                                                                             </div>
-                                                                            <p className="text-sm text-gray-600">
+                                                                            <p className="text-sm text-gray-300">
                                                                                 {review.comment}
                                                                             </p>
                                                                         </div>
@@ -689,7 +748,7 @@ export default function DashboardPage() {
                         </>
                     )}
                 </motion.div>
-            </section>
+            </main>
 
             {/* Review Popup */}
 
@@ -699,6 +758,10 @@ export default function DashboardPage() {
                     onClick={() => setShowReviewPopup(false)}
                 >
                     <motion.div
+                        ref={reviewRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="review-title"
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.2 }}
@@ -708,14 +771,16 @@ export default function DashboardPage() {
                         {!reviewSubmitted ? (
                             <>
                                 <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-2xl md:text-3xl font-bold text-white font-sans">
+                                    <h2 id="review-title" className="text-2xl md:text-3xl font-bold text-white font-sans">
                                         Leave a Review
                                     </h2>
                                     <button
+                                        type="button"
+                                        aria-label="Close review form"
                                         onClick={() => setShowReviewPopup(false)}
-                                        className="text-gray-400 hover:text-white transition-colors"
+                                        className="text-gray-300 hover:text-white transition-colors"
                                     >
-                                        <HiX className="h-6 w-6" />
+                                        <HiX aria-hidden="true" className="h-6 w-6" />
                                     </button>
                                 </div>
 
@@ -729,21 +794,38 @@ export default function DashboardPage() {
                                 </div>
 
                                 <div className="mb-6">
-                                    <label className="block text-sm font-semibold text-gray-300 mb-3 font-sans">
-                                        Rating
-                                    </label>
-                                    <div className="flex gap-2">
+                                    <p id="rating-label" className="block text-sm font-semibold text-gray-300 mb-3 font-sans">
+                                        Rating <span className="font-normal text-gray-400">(required)</span>
+                                    </p>
+                                    <div
+                                        className="flex gap-2"
+                                        role="radiogroup"
+                                        aria-labelledby="rating-label"
+                                        onKeyDown={(e) => {
+                                            if (e.key === "ArrowRight" || e.key === "ArrowUp") {
+                                                e.preventDefault();
+                                                setReviewRating((r) => Math.min(5, r + 1));
+                                            } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
+                                                e.preventDefault();
+                                                setReviewRating((r) => Math.max(1, r - 1));
+                                            }
+                                        }}
+                                    >
                                         {[1, 2, 3, 4, 5].map((star) => (
                                             <button
                                                 key={star}
                                                 type="button"
+                                                role="radio"
+                                                aria-checked={star === reviewRating}
+                                                aria-label={`${star} star${star > 1 ? "s" : ""}`}
+                                                tabIndex={star === (reviewRating || 1) ? 0 : -1}
                                                 onClick={() => setReviewRating(star)}
-                                                className="text-3xl transition-colors"
+                                                className="rounded text-3xl transition-colors"
                                             >
                                                 {star <= reviewRating ? (
-                                                    <HiStar className="text-yellow-400" />
+                                                    <HiStar aria-hidden="true" className="text-yellow-400" />
                                                 ) : (
-                                                    <HiOutlineStar className="text-gray-600 hover:text-gray-400" />
+                                                    <HiOutlineStar aria-hidden="true" className="text-gray-400 hover:text-gray-200" />
                                                 )}
                                             </button>
                                         ))}
@@ -763,18 +845,20 @@ export default function DashboardPage() {
                                         onChange={(e) => setReviewComment(e.target.value)}
                                         placeholder="Share your experience with this club..."
                                         rows={4}
-                                        className="w-full bg-black/50 border-2 border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors font-sans resize-none"
+                                        className="w-full bg-black/50 border-2 border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors font-sans resize-none"
                                     />
                                 </div>
 
                                 <div className="flex gap-4">
                                     <button
+                                        type="button"
                                         onClick={() => setShowReviewPopup(false)}
                                         className="flex-1 px-6 py-3 font-sans font-semibold text-white transition-all duration-300 border-2 border-gray-600 hover:bg-gray-900 hover:border-gray-500 rounded-xl"
                                     >
                                         Cancel
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => {
                                             const newReview: Review = {
                                                 clubId: reviewClub.id,
@@ -809,15 +893,15 @@ export default function DashboardPage() {
                                 </div>
                             </>
                         ) : (
-                            <div className="text-center py-8">
+                            <div className="text-center py-8" role="status">
                                 <div className="mb-4">
-                                    <HiCheck className="h-16 w-16 text-white mx-auto" />
+                                    <HiCheck aria-hidden="true" className="h-16 w-16 text-white mx-auto" />
                                 </div>
-                                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 font-sans">
-                                    Review Sent!
+                                <h2 id="review-title" className="text-2xl md:text-3xl font-bold text-white mb-4 font-sans">
+                                    Review Posted!
                                 </h2>
-                                <p className="text-gray-400 font-sans">
-                                    Your review has been sent to {reviewClub.name}. Thank you for
+                                <p className="text-gray-300 font-sans">
+                                    Your review of {reviewClub.name} has been added. Thank you for
                                     your feedback!
                                 </p>
                             </div>

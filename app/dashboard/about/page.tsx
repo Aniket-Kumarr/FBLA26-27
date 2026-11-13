@@ -18,7 +18,7 @@ export default function DashboardAboutPage() {
       <div className="absolute inset-0 bg-gradient-to-b from-gray-900/30 via-transparent to-gray-900/20 pointer-events-none" />
       <DashboardNavbar />
 
-      <section className="pt-32 pb-32 px-4 md:px-12 relative z-10">
+      <main id="main" tabIndex={-1} className="outline-none pt-32 pb-32 px-4 md:px-12 relative z-10">
         <div className="w-full max-w-3xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -46,7 +46,7 @@ export default function DashboardAboutPage() {
             </Link>
           </motion.div>
         </div>
-      </section>
+      </main>
     </div>
   );
 }

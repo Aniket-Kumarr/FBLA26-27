@@ -160,11 +160,11 @@ function SignUpContent() {
                 href="/"
                 className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-black/80 backdrop-blur-sm border-2 border-gray-600 text-white hover:bg-gray-900 hover:border-gray-500 px-4 py-2 rounded-xl transition-all duration-300 font-sans text-sm font-semibold"
             >
-                <HiHome className="h-5 w-5" />
+                <HiHome aria-hidden="true" className="h-5 w-5" />
                 <span>Back to Home</span>
             </Link>
 
-            <section className="pt-12 pb-24 px-4 md:px-12 min-h-screen flex items-center justify-center">
+            <main id="main" tabIndex={-1} className="outline-none pt-24 pb-24 px-4 md:px-12 min-h-screen flex items-center justify-center">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -183,7 +183,7 @@ function SignUpContent() {
                                 </h1>
                                 <Image
                                     src="/ctl.png"
-                                    alt="CTL"
+                                    alt="CLT CommunityHub logo"
                                     width={64}
                                     height={64}
                                     className="object-contain"
@@ -194,7 +194,7 @@ function SignUpContent() {
                             </p>
 
                             {error && (
-                                <div className="mb-6 p-4 bg-red-900/50 border-2 border-red-700 rounded-xl text-red-200 text-sm font-sans">
+                                <div role="alert" className="mb-6 p-4 bg-red-900/50 border-2 border-red-700 rounded-xl text-red-200 text-sm font-sans">
                                     {error}
                                 </div>
                             )}
@@ -206,7 +206,7 @@ function SignUpContent() {
                                     </label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <HiUser className="h-5 w-5 text-gray-500" />
+                                            <HiUser aria-hidden="true" className="h-5 w-5 text-gray-400" />
                                         </div>
                                         <input
                                             type="text"
@@ -215,7 +215,7 @@ function SignUpContent() {
                                             value={formData.name}
                                             onChange={handleChange}
                                             required
-                                            className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors font-sans"
+                                            className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors font-sans"
                                             placeholder="Enter your full name"
                                         />
                                     </div>
@@ -227,7 +227,7 @@ function SignUpContent() {
                                     </label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <HiMail className="h-5 w-5 text-gray-500" />
+                                            <HiMail aria-hidden="true" className="h-5 w-5 text-gray-400" />
                                         </div>
                                         <input
                                             type="email"
@@ -236,7 +236,7 @@ function SignUpContent() {
                                             value={formData.email}
                                             onChange={handleChange}
                                             required
-                                            className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors font-sans"
+                                            className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors font-sans"
                                             placeholder="Enter your email"
                                         />
                                     </div>
@@ -249,7 +249,7 @@ function SignUpContent() {
                                         </label>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                <HiLockClosed className="h-5 w-5 text-gray-500" />
+                                                <HiLockClosed aria-hidden="true" className="h-5 w-5 text-gray-400" />
                                             </div>
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
@@ -258,18 +258,20 @@ function SignUpContent() {
                                                 value={formData.password}
                                                 onChange={handleChange}
                                                 required
-                                                className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors font-sans"
+                                                className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors font-sans"
                                                 placeholder="Enter your password"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
-                                                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-300 transition-colors"
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
+                                            aria-pressed={showPassword}
+                                                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-300 transition-colors"
                                             >
                                                 {showPassword ? (
-                                                    <HiEyeOff className="h-5 w-5" />
+                                                    <HiEyeOff aria-hidden="true" className="h-5 w-5" />
                                                 ) : (
-                                                    <HiEye className="h-5 w-5" />
+                                                    <HiEye aria-hidden="true" className="h-5 w-5" />
                                                 )}
                                             </button>
                                         </div>
@@ -281,7 +283,7 @@ function SignUpContent() {
                                         </label>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                <HiLockClosed className="h-5 w-5 text-gray-500" />
+                                                <HiLockClosed aria-hidden="true" className="h-5 w-5 text-gray-400" />
                                             </div>
                                             <input
                                                 type={showConfirmPassword ? 'text' : 'password'}
@@ -290,18 +292,20 @@ function SignUpContent() {
                                                 value={formData.confirmPassword}
                                                 onChange={handleChange}
                                                 required
-                                                className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors font-sans"
+                                                className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors font-sans"
                                                 placeholder="Confirm your password"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-300 transition-colors"
+                                                aria-label={showConfirmPassword ? "Hide password confirmation" : "Show password confirmation"}
+                                                aria-pressed={showConfirmPassword}
+                                                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-300 transition-colors"
                                             >
                                                 {showConfirmPassword ? (
-                                                    <HiEyeOff className="h-5 w-5" />
+                                                    <HiEyeOff aria-hidden="true" className="h-5 w-5" />
                                                 ) : (
-                                                    <HiEye className="h-5 w-5" />
+                                                    <HiEye aria-hidden="true" className="h-5 w-5" />
                                                 )}
                                             </button>
                                         </div>
@@ -365,7 +369,7 @@ function SignUpContent() {
                         </motion.div>
                     </div>
                 </motion.div>
-            </section>
+            </main>
 
             {showErrorPopup && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md" onClick={() => setShowErrorPopup(false)}>
@@ -390,7 +394,7 @@ function SignUpContent() {
                                 className="text-white hover:text-gray-400 transition-colors p-1 rounded-lg hover:bg-white/10 ml-4"
                                 aria-label="Close"
                             >
-                                <HiX className="h-7 w-7" />
+                                <HiX aria-hidden="true" className="h-7 w-7" />
                             </button>
                         </div>
 

@@ -95,11 +95,11 @@ function SignInContent() {
                 href="/"
                 className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-black/80 backdrop-blur-sm border-2 border-gray-600 text-white hover:bg-gray-900 hover:border-gray-500 px-4 py-2 rounded-xl transition-all duration-300 font-sans text-sm font-semibold"
             >
-                <HiHome className="h-5 w-5" />
+                <HiHome aria-hidden="true" className="h-5 w-5" />
                 <span>Back to Home</span>
             </Link>
 
-            <section className="pt-12 pb-24 px-4 md:px-12 min-h-screen flex items-center justify-center">
+            <main id="main" tabIndex={-1} className="outline-none pt-24 pb-24 px-4 md:px-12 min-h-screen flex items-center justify-center">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -118,7 +118,7 @@ function SignInContent() {
                                 </h1>
                                 <Image
                                     src="/ctl.png"
-                                    alt="CTL"
+                                    alt="CLT CommunityHub logo"
                                     width={64}
                                     height={64}
                                     className="object-contain"
@@ -130,7 +130,7 @@ function SignInContent() {
 
                             <form onSubmit={handleSubmit} className="space-y-6">
                                 {error && (
-                                    <p className="text-red-400 text-sm font-sans bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2">
+                                    <p role="alert" className="text-red-300 text-sm font-sans bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-2">
                                         {error}
                                     </p>
                                 )}
@@ -140,7 +140,7 @@ function SignInContent() {
                                     </label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <HiMail className="h-5 w-5 text-gray-500" />
+                                            <HiMail aria-hidden="true" className="h-5 w-5 text-gray-400" />
                                         </div>
                                         <input
                                             type="email"
@@ -149,7 +149,7 @@ function SignInContent() {
                                             value={formData.email}
                                             onChange={handleChange}
                                             required
-                                            className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors font-sans"
+                                            className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-4 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors font-sans"
                                             placeholder="Enter your email"
                                         />
                                     </div>
@@ -161,7 +161,7 @@ function SignInContent() {
                                     </label>
                                     <div className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <HiLockClosed className="h-5 w-5 text-gray-500" />
+                                            <HiLockClosed aria-hidden="true" className="h-5 w-5 text-gray-400" />
                                         </div>
                                         <input
                                             type={showPassword ? 'text' : 'password'}
@@ -170,18 +170,20 @@ function SignInContent() {
                                             value={formData.password}
                                             onChange={handleChange}
                                             required
-                                            className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors font-sans"
+                                            className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors font-sans"
                                             placeholder="Enter your password"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-500 hover:text-gray-300 transition-colors"
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
+                                            aria-pressed={showPassword}
+                                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-300 transition-colors"
                                         >
                                             {showPassword ? (
-                                                <HiEyeOff className="h-5 w-5" />
+                                                <HiEyeOff aria-hidden="true" className="h-5 w-5" />
                                             ) : (
-                                                <HiEye className="h-5 w-5" />
+                                                <HiEye aria-hidden="true" className="h-5 w-5" />
                                             )}
                                         </button>
                                     </div>
@@ -194,9 +196,9 @@ function SignInContent() {
                                                 type="checkbox"
                                                 checked={rememberMe}
                                                 onChange={(e) => setRememberMe(e.target.checked)}
-                                                className="sr-only"
+                                                className="peer sr-only"
                                             />
-                                            <div className={`w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center ${rememberMe
+                                            <div aria-hidden="true" className={`peer-focus-visible:ring-2 peer-focus-visible:ring-indigo-300 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-black w-5 h-5 rounded border-2 transition-all duration-200 flex items-center justify-center ${rememberMe
                                                 ? 'bg-blue-600 border-blue-600'
                                                 : 'bg-black/50 border-gray-600 group-hover:border-gray-500'
                                                 }`}>
@@ -324,7 +326,7 @@ function SignInContent() {
                         </motion.div>
                     </div>
                 </motion.div>
-            </section>
+            </main>
 
         </div>
     );

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { prefersReducedMotion } from "@/components/a11y/A11yProvider";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
@@ -100,7 +101,7 @@ export default function StairsHero({ className = "" }: { className?: string }) {
     const label = labelRef.current;
     if (!mount || !label) return;
 
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduceMotion = prefersReducedMotion();
     const small = window.innerWidth < 768;
 
     let renderer: THREE.WebGLRenderer;

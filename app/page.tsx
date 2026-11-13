@@ -31,6 +31,11 @@ import {
   HiSupport,
   HiAcademicCap,
   HiLockClosed,
+  HiInboxIn,
+  HiCollection,
+  HiCursorClick,
+  HiPause,
+  HiPlay,
 } from "react-icons/hi";
 import Navbar from "@/components/Navbar";
 import TiltCard from "@/components/fx/TiltCard";
@@ -38,6 +43,12 @@ import Marquee from "@/components/fx/Marquee";
 import ScrollProgress from "@/components/fx/ScrollProgress";
 import CursorGlow from "@/components/fx/CursorGlow";
 import Magnetic from "@/components/fx/Magnetic";
+import SiteFooter from "@/components/SiteFooter";
+import Cite from "@/components/Cite";
+import GpsSection from "@/components/objects/GpsSection";
+import Signpost from "@/components/objects/Signpost";
+import RouteSteps from "@/components/objects/RouteSteps";
+import { useA11y } from "@/components/a11y/A11yProvider";
 import { CATEGORIES, KINDS, KIND_ORDER, LISTING_COUNT, ORGS, type Category, type Kind } from "@/lib/communityData";
 
 // WebGL only runs in the browser; keep three.js out of the server bundle
@@ -79,7 +90,7 @@ const BENEFITS = [
   { title: "Find Your Community", description: "Discover clubs and organizations that match your interests and connect with like-minded community members.", Icon: HiUsers },
   { title: "Interactive Map", description: "Explore club locations across Charlotte with our interactive map to find meetings near you.", Icon: HiMap, feature: true },
   { title: "Easy Search", description: "Quickly find clubs by name, location, or category with our powerful search functionality.", Icon: HiSearch },
-  { title: "Stay Connected", description: "Join thousands of community members building connections and growing together in the Charlotte community.", Icon: HiChat },
+  { title: "Stay Connected", description: "Join community members who are building connections and growing together across Charlotte.", Icon: HiChat },
   { title: "All in One Place", description: "Access all club information, meeting times, locations, and member counts in one convenient dashboard.", Icon: HiViewGrid },
 ];
 
@@ -87,6 +98,14 @@ const STEPS = [
   { title: "Create your account", body: "Sign up for free in under a minute with email or Google.", Icon: HiUserAdd },
   { title: "Explore the map", body: "Browse clubs, non-profits, events and services and see where they meet.", Icon: HiLocationMarker },
   { title: "Join & grow", body: "Connect with organizers, find your people, and promote your own ideas.", Icon: HiSparkles },
+];
+
+/** How the hub manages Charlotte's shared resources, end to end. */
+const LIFECYCLE = [
+  { title: "Collect", body: "Organizations submit their listing through our registration form, so information comes straight from the source.", Icon: HiInboxIn },
+  { title: "Organize", body: "Every listing is tagged by type and category and pinned to a real location on the map.", Icon: HiCollection },
+  { title: "Discover", body: "Members search, filter by category, browse the map or ask the AI assistant to find what they need.", Icon: HiCursorClick },
+  { title: "Connect", body: "People request to join, leave reviews and come back for new events, closing the loop for organizers.", Icon: HiUserGroup },
 ];
 
 /* ---------- building blocks ---------- */
@@ -184,14 +203,40 @@ function ScrollRevealText({ text, className = "" }: { text: string; className?: 
 function Explorer() {
   const [cat, setCat] = useState<Category>("STEM");
   const list = ORGS.filter((o) => o.category === cat);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const slug = (c: string) => c.toLowerCase().replace(/[^a-z]+/g, "-");
+
+  // WAI-ARIA tabs pattern: arrow keys move between categories, Home/End jump to the ends
+  const onTabKey = (e: React.KeyboardEvent, i: number) => {
+    const last = CATEGORIES.length - 1;
+    const next =
+      e.key === "ArrowRight" ? (i === last ? 0 : i + 1)
+      : e.key === "ArrowLeft" ? (i === 0 ? last : i - 1)
+      : e.key === "Home" ? 0
+      : e.key === "End" ? last
+      : -1;
+    if (next < 0) return;
+    e.preventDefault();
+    setCat(CATEGORIES[next]);
+    tabRefs.current[next]?.focus();
+  };
+
   return (
     <div>
-      <div className="mb-10 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Categories">
-        {CATEGORIES.map((c) => (
+      <div className="mb-10 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Listing categories">
+        {CATEGORIES.map((c, i) => (
           <button
             key={c}
+            ref={(el) => {
+              tabRefs.current[i] = el;
+            }}
+            type="button"
             role="tab"
+            id={`tab-${slug(c)}`}
             aria-selected={c === cat}
+            aria-controls="explore-panel"
+            tabIndex={c === cat ? 0 : -1}
+            onKeyDown={(e) => onTabKey(e, i)}
             onClick={() => setCat(c)}
             className={`relative rounded-full px-5 py-2.5 text-sm font-semibold transition-colors md:text-base ${
               c === cat ? "text-black" : "text-gray-400 hover:text-white"
@@ -209,7 +254,13 @@ function Explorer() {
         ))}
       </div>
 
-      <div className="grid min-h-[22rem] grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div
+        id="explore-panel"
+        role="tabpanel"
+        aria-labelledby={`tab-${slug(cat)}`}
+        tabIndex={0}
+        className="grid min-h-[22rem] grid-cols-1 gap-5 rounded-3xl sm:grid-cols-2 lg:grid-cols-3"
+      >
         <AnimatePresence mode="popLayout">
           {list.map((o, i) => {
             const k = o.kind === "class" ? null : KINDS[o.kind];
@@ -230,7 +281,7 @@ function Explorer() {
                         k ? k.chip : "border-white/15 bg-white/5 text-gray-200"
                       }`}
                     >
-                      <Icon className="h-3.5 w-3.5" />
+                      <Icon aria-hidden="true" className="h-3.5 w-3.5" />
                       {k ? k.label : "Class"}
                     </span>
                     <h3 className="mb-2 font-sans text-lg font-bold leading-snug text-white">{o.name}</h3>
@@ -244,7 +295,7 @@ function Explorer() {
       </div>
 
       <div className="mt-10 flex flex-col items-center justify-center gap-3 text-center sm:flex-row">
-        <HiLockClosed className="h-4 w-4 text-gray-500" />
+        <HiLockClosed aria-hidden="true" className="h-4 w-4 text-gray-400" />
         <p className="text-gray-400">Meeting times, locations and the full map are available once you&apos;re signed in.</p>
         <Link href="/get-started" className="font-semibold text-white underline-offset-4 hover:underline">
           Create a free account →
@@ -261,6 +312,8 @@ export default function Home() {
   const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroTextY = useTransform(heroProgress, [0, 1], [0, 140]);
   const heroTextOpacity = useTransform(heroProgress, [0, 0.7], [1, 0]);
+  const { prefs } = useA11y();
+  const [tickerPaused, setTickerPaused] = useState(false);
 
   return (
     <div className="bg-site relative min-h-screen overflow-x-clip">
@@ -268,6 +321,7 @@ export default function Home() {
       <CursorGlow />
       <Navbar />
 
+      <main id="main" tabIndex={-1} className="outline-none">
       {/* ================= HERO: endless staircase ================= */}
       <section ref={heroRef} className="relative flex flex-col overflow-hidden pb-10 pt-32 lg:min-h-[100svh] lg:flex-row lg:items-center lg:pb-24">
         {/* fallback glow (visible before / without WebGL) */}
@@ -282,7 +336,8 @@ export default function Home() {
           transition={{ duration: 1.6, delay: 0.15 }}
           className="relative order-2 mt-6 h-[440px] w-full sm:h-[540px] lg:absolute lg:inset-0 lg:mt-0 lg:h-auto"
         >
-          <StairsHero className="h-full w-full" />
+          {/* remount when "Reduce motion" changes so the scene switches to a still frame */}
+          <StairsHero key={prefs.reduceMotion ? "still" : "live"} className="h-full w-full" />
           {/* soft top/bottom fades so the canvas melts into the page on mobile */}
           <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black to-transparent lg:hidden" />
           <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black to-transparent lg:hidden" />
@@ -348,7 +403,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5, ease: EASE }}
           >
-            Your all-in-one platform for academic success, resources, and community connection in Charlotte.
+            Charlotte&apos;s digital resource hub: one searchable, mapped directory of the clubs, non-profits, events, and services you need.
           </motion.p>
 
           <motion.div
@@ -372,7 +427,7 @@ export default function Home() {
           </motion.div>
 
           <motion.p
-            className="mt-12 hidden max-w-sm border-l border-white/15 pl-4 text-sm leading-relaxed text-gray-500 lg:block"
+            className="mt-12 hidden max-w-sm border-l border-white/15 pl-4 text-sm leading-relaxed text-gray-400 lg:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 1.2 }}
@@ -383,19 +438,19 @@ export default function Home() {
 
         <motion.a
           href="#stats"
-          aria-label="Scroll down"
+          aria-label="Scroll to the next section"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.6 }}
-          className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-1 text-xs font-medium uppercase tracking-[0.25em] text-gray-500 transition-colors hover:text-white lg:flex"
+          className="absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-1 text-xs font-medium uppercase tracking-[0.25em] text-gray-400 transition-colors hover:text-white lg:flex"
         >
           Scroll
-          <HiChevronDown className="h-5 w-5 animate-bounce" />
+          <HiChevronDown aria-hidden="true" className="h-5 w-5 animate-bounce" />
         </motion.a>
       </section>
 
       {/* ================= STATS ================= */}
-      <section id="stats" className="relative z-10 scroll-mt-24 px-4 py-10 md:px-12">
+      <section id="stats" aria-label="CLT CommunityHub at a glance" className="relative z-10 scroll-mt-24 px-4 py-10 md:px-12">
         <div className="mx-auto grid max-w-7xl grid-cols-2 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur lg:grid-cols-4">
           {[
             { node: <Counter to={LISTING_COUNT} suffix="+" />, label: "Clubs, non-profits, services & classes listed", color: "text-white" },
@@ -419,6 +474,55 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* ================= THE PROBLEM + HOW WE MANAGE IT ================= */}
+      <section aria-labelledby="problem-heading" className="relative z-10 px-4 py-28 md:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-16 grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
+            <div className="text-center lg:text-left">
+              <Eyebrow>The problem</Eyebrow>
+              <h2 id="problem-heading" className="mt-6 text-4xl font-extrabold tracking-tight text-white md:text-6xl" style={{ fontFamily: "Nunito, sans-serif" }}>
+                Charlotte&apos;s resources are everywhere, <span className="text-shimmer">and hard to find</span>
+              </h2>
+              <p className="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-gray-300 md:text-xl lg:mx-0">
+                Clubs post on social media, non-profits on their own websites, and events on flyers and in group chats. With no single place to look,
+                residents miss opportunities and organizations struggle to be found. CLT CommunityHub is a{" "}
+                <strong className="text-white">digital resource management system</strong> that collects this information, keeps it organized and makes it easy to act on.
+              </p>
+            </div>
+            {/* 3D signpost: four directions become one as you scroll */}
+            <Signpost />
+          </div>
+
+          <ul className="mb-20 grid grid-cols-1 gap-6 md:grid-cols-3">
+            {[
+              { stat: "874,579", body: <>people live in Charlotte, the largest city in North Carolina, and its resources are spread across the whole city.<Cite id="census" /></> },
+              { stat: "28.3%", body: <>of Americans volunteered through an organization in 2023. Organizations need an easy way for those people to find them.<Cite id="americorps" /></> },
+              { stat: "95%", body: <>of U.S. teens have access to a smartphone, so the hub is designed mobile-first and works on any screen size.<Cite id="pew" /></> },
+            ].map((c) => (
+              <li key={c.stat} className="rounded-3xl border border-white/10 bg-white/[0.03] p-8">
+                <p className="mb-3 text-5xl font-extrabold tracking-tight text-white" style={{ fontFamily: "Nunito, sans-serif" }}>
+                  {c.stat}
+                </p>
+                <p className="leading-relaxed text-gray-300">{c.body}</p>
+              </li>
+            ))}
+          </ul>
+
+          <h3 className="mb-10 text-center text-3xl font-extrabold text-white md:text-4xl" style={{ fontFamily: "Nunito, sans-serif" }}>
+            How the hub manages Charlotte&apos;s resources
+          </h3>
+          {/* 3D route: a marker drives from stop to stop as you scroll */}
+          <RouteSteps steps={LIFECYCLE} />
+        </div>
+      </section>
+
+      <SectionDivider />
+
+      {/* ================= GPS: the map pulls out of the device ================= */}
+      <GpsSection />
+
+      <SectionDivider />
 
       {/* ================= WHAT YOU CAN FIND ================= */}
       <section className="relative z-10 px-4 py-28 md:px-12">
@@ -448,7 +552,7 @@ export default function Home() {
                   <div className="relative flex h-full flex-col overflow-hidden p-8 md:p-10">
                     <span aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full opacity-20 blur-3xl transition-opacity duration-700 group-hover:opacity-40" style={{ background: kind.hex }} />
                     <div className="relative mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-gradient-to-br from-white/15 to-white/[0.02]">
-                      <Icon className={`h-8 w-8 ${kind.text}`} />
+                      <Icon aria-hidden="true" className={`h-8 w-8 ${kind.text}`} />
                     </div>
                     <h3 className="mb-3 text-3xl font-extrabold text-white md:text-4xl" style={{ fontFamily: "Nunito, sans-serif" }}>
                       {kind.plural}
@@ -481,11 +585,27 @@ export default function Home() {
       </section>
 
       {/* ================= CLUB TICKER ================= */}
-      <section className="relative z-10 py-12">
-        <p className="mb-8 text-center text-sm font-semibold uppercase tracking-[0.25em] text-gray-500">Already on the hub</p>
+      <section className="relative z-10 py-12" aria-labelledby="ticker-heading">
+        <div className="mb-8 flex items-center justify-center gap-4">
+          <h2 id="ticker-heading" className="text-center text-sm font-semibold uppercase tracking-[0.25em] text-gray-300">
+            Already on the hub
+          </h2>
+          {!prefs.reduceMotion && (
+            <button
+              type="button"
+              onClick={() => setTickerPaused((p) => !p)}
+              aria-pressed={tickerPaused}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-gray-200 transition-colors hover:border-white/40 hover:text-white"
+            >
+              {tickerPaused ? <HiPlay aria-hidden="true" className="h-4 w-4" /> : <HiPause aria-hidden="true" className="h-4 w-4" />}
+              {tickerPaused ? "Play" : "Pause"}
+              <span className="sr-only"> scrolling list of organizations</span>
+            </button>
+          )}
+        </div>
         <div className="space-y-4">
-          <Marquee items={CLUBS_ROW_1} duration={55} />
-          <Marquee items={CLUBS_ROW_2} duration={60} reverse />
+          <Marquee items={CLUBS_ROW_1} duration={55} paused={tickerPaused || prefs.reduceMotion} />
+          <Marquee items={CLUBS_ROW_2} duration={60} reverse paused={tickerPaused || prefs.reduceMotion} />
         </div>
       </section>
 
@@ -548,7 +668,7 @@ export default function Home() {
                       <div className={b.feature ? "md:w-1/2" : ""}>
                         <div className="relative mb-6 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-white/15 bg-gradient-to-br from-white/15 to-white/[0.02]">
                           <span aria-hidden className="absolute inset-0 rounded-2xl bg-indigo-400/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
-                          <Icon className="relative h-7 w-7 text-white" />
+                          <Icon aria-hidden="true" className="relative h-7 w-7 text-white" />
                         </div>
                         <h3 className="mb-3 font-sans text-2xl font-bold text-white">{b.title}</h3>
                         <p className="font-sans leading-relaxed text-gray-400">{b.description}</p>
@@ -631,7 +751,7 @@ export default function Home() {
                 >
                   <div className="relative mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full border border-white/15 bg-black shadow-[0_0_50px_-12px_rgba(165,180,252,0.7)]">
                     <span aria-hidden className="absolute inset-1.5 rounded-full bg-gradient-to-br from-white/15 to-transparent" />
-                    <Icon className="relative h-10 w-10 text-white" />
+                    <Icon aria-hidden="true" className="relative h-10 w-10 text-white" />
                     <span className="absolute -right-1 -top-1 flex h-8 w-8 items-center justify-center rounded-full bg-white text-sm font-extrabold text-black">{i + 1}</span>
                   </div>
                   <h3 className="mb-2 font-sans text-2xl font-bold text-white">{s.title}</h3>
@@ -655,7 +775,7 @@ export default function Home() {
           <div aria-hidden className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-1/2 h-[36rem] w-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/20 blur-[120px]" />
           </div>
-          <NetworkHero centered className="absolute inset-0 opacity-80" />
+          <NetworkHero key={prefs.reduceMotion ? "still" : "live"} centered className="absolute inset-0 opacity-80" />
           <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.75)_0%,rgba(0,0,0,0.35)_45%,transparent_75%)]" />
           <div aria-hidden className="absolute inset-x-20 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />
           <div className="relative flex min-h-[640px] flex-col items-center justify-center px-6 py-24 text-center md:px-16">
@@ -683,55 +803,9 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ================= FOOTER ================= */}
-      <footer className="relative z-10 border-t border-white/10 px-4 pb-10 pt-16 md:px-12">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 md:grid-cols-[2fr_1fr_1fr]">
-          <div>
-            <Link href="/" className="mb-5 flex items-center gap-3">
-              <Image src="/ctl.png" alt="CTL" width={40} height={40} className="object-contain" />
-              <span className="text-xl font-bold text-white">CLT CommunityHub</span>
-            </Link>
-            <p className="max-w-md leading-relaxed text-gray-400">
-              Your all-in-one platform for academic success, resources, and community connection in Charlotte. We help people in the Charlotte area find clubs,
-              non-profits, events, and services that they need.
-            </p>
-          </div>
-          <div>
-            <h4 className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-gray-500">Explore</h4>
-            <ul className="space-y-3">
-              {KIND_ORDER.map((k) => (
-                <li key={k}>
-                  <a href="#explore" className="inline-flex items-center gap-2 text-gray-300 transition-colors hover:text-white">
-                    <span className={`h-1.5 w-1.5 rounded-full ${KINDS[k].dot}`} />
-                    {KINDS[k].plural}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="mb-4 text-sm font-bold uppercase tracking-[0.2em] text-gray-500">Hub</h4>
-            <ul className="space-y-3">
-              {[
-                { href: "/about", label: "About" },
-                { href: "/resources", label: "Resources" },
-                { href: "/join-us", label: "Join Us" },
-                { href: "/signin", label: "Sign In" },
-              ].map((l) => (
-                <li key={l.href}>
-                  <Link href={l.href} className="text-gray-300 transition-colors hover:text-white">
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <div className="mx-auto mt-14 flex max-w-7xl flex-col items-center justify-between gap-3 border-t border-white/10 pt-8 text-sm text-gray-500 md:flex-row">
-          <p>© {new Date().getFullYear()} CLT CommunityHub · Charlotte, NC</p>
-          <p>Keep climbing.</p>
-        </div>
-      </footer>
+      </main>
+
+      <SiteFooter />
     </div>
   );
 }
