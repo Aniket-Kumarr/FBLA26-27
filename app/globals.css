@@ -173,6 +173,88 @@
   display: none;
 }
 
+/* CharlotteMap3D (MapLibre GL) — dark popup + glowing pin markers */
+.maplibregl-popup-content {
+  background: #0b1020 !important;
+  color: #e5e7eb !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  padding: 10px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.maplibregl-popup-tip {
+  border-top-color: #0b1020 !important;
+  border-bottom-color: #0b1020 !important;
+}
+.maplibregl-ctrl-attrib {
+  background: rgba(0, 0, 0, 0.45) !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+.map3d-pin {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  background: var(--pin-color, #5eead4);
+  cursor: pointer;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--pin-color, #5eead4) 35%, transparent),
+    0 0 14px 2px var(--pin-color, #5eead4);
+  animation: map3d-pulse 2.4s ease-in-out infinite;
+}
+.map3d-pin:focus-visible {
+  outline: 3px solid #fde047;
+  outline-offset: 3px;
+}
+.map3d-pin--active {
+  width: 26px;
+  height: 26px;
+  animation: none;
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--pin-color, #5eead4) 45%, transparent),
+    0 0 22px 4px var(--pin-color, #5eead4);
+}
+.map3d-pin--contrast {
+  border-width: 3px;
+  border-color: #ffffff;
+  box-shadow:
+    0 0 0 3px #000000,
+    0 0 0 6px #ffffff;
+}
+@keyframes map3d-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--pin-color, #5eead4) 35%, transparent),
+      0 0 14px 2px var(--pin-color, #5eead4);
+  }
+  50% {
+    box-shadow:
+      0 0 0 7px color-mix(in srgb, var(--pin-color, #5eead4) 15%, transparent),
+      0 0 20px 6px var(--pin-color, #5eead4);
+  }
+}
+
+/* Spotlight cards (dashboard): a slowly rotating conic-gradient border */
+@property --spin-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.spotlight-border {
+  --spin-angle: 0deg;
+  background: conic-gradient(from var(--spin-angle), #5eead4, #a5b4fc, #fda4af, #fdba74, #5eead4);
+  animation: spin-border 7s linear infinite;
+}
+@keyframes spin-border {
+  to {
+    --spin-angle: 360deg;
+  }
+}
+
 @keyframes text-shimmer {
   from {
     background-position: 0% 50%;
@@ -257,6 +339,10 @@ html.a11y-high-contrast .dot-grid {
 }
 html.a11y-high-contrast .map-tiles-dark {
   filter: none;
+}
+html.a11y-high-contrast .spotlight-border {
+  animation: none;
+  background: #ffffff;
 }
 html.a11y-high-contrast :focus-visible {
   outline: 3px solid #fde047;

@@ -41,7 +41,6 @@ import Navbar from "@/components/Navbar";
 import TiltCard from "@/components/fx/TiltCard";
 import Marquee from "@/components/fx/Marquee";
 import ScrollProgress from "@/components/fx/ScrollProgress";
-import CursorGlow from "@/components/fx/CursorGlow";
 import Magnetic from "@/components/fx/Magnetic";
 import SiteFooter from "@/components/SiteFooter";
 import Cite from "@/components/Cite";
@@ -318,7 +317,6 @@ export default function Home() {
   return (
     <div className="bg-site relative min-h-screen overflow-x-clip">
       <ScrollProgress />
-      <CursorGlow />
       <Navbar />
 
       <main id="main" tabIndex={-1} className="outline-none">

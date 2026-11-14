@@ -11,6 +11,8 @@ export type MapListing = {
   meetingTime: string;
   lat: number;
   lng: number;
+  /** Optional — used by the 3D map to colour each pin. See CharlotteMap3D's categoryToKind. */
+  category?: string;
 };
 
 /**

@@ -106,3 +106,56 @@ export const ORGS: Org[] = [
 
 /** Count of organisations/classes in the full knowledge base. */
 export const LISTING_COUNT = 58;
+
+/**
+ * The dashboard groups real listings (loaded from Supabase) into five sections — see
+ * `SECTION_ORDER`/`getCategory` in app/dashboard/page.tsx. This is the single colour + icon
+ * per section, reused by every dashboard visual (tree, flow map, rings, cards) so a category
+ * reads the same way everywhere on the page. Distinct from `KINDS` above, which colours the
+ * four listing *kinds* (club/nonprofit/event/service) shown on the marketing pages.
+ */
+export const DASHBOARD_SECTIONS = ["Classes", "STEM", "Health & Wellness", "Community & Service", "Other"] as const;
+export type DashboardSection = (typeof DASHBOARD_SECTIONS)[number];
+
+export const SECTION_STYLE: Record<DashboardSection, { hex: string; text: string; dot: string; chip: string; glow: string; iconName: "academic" | "beaker" | "heart" | "users" | "sparkles" }> = {
+  Classes: {
+    hex: "#A5B4FC",
+    text: "text-indigo-300",
+    dot: "bg-indigo-300",
+    chip: "border-indigo-300/25 bg-indigo-300/[0.08] text-indigo-200",
+    glow: "rgba(165,180,252,0.18)",
+    iconName: "academic",
+  },
+  STEM: {
+    hex: "#5EEAD4",
+    text: "text-teal-300",
+    dot: "bg-teal-300",
+    chip: "border-teal-300/25 bg-teal-300/[0.08] text-teal-200",
+    glow: "rgba(94,234,212,0.18)",
+    iconName: "beaker",
+  },
+  "Health & Wellness": {
+    hex: "#FDA4AF",
+    text: "text-rose-300",
+    dot: "bg-rose-300",
+    chip: "border-rose-300/25 bg-rose-300/[0.08] text-rose-200",
+    glow: "rgba(253,164,175,0.18)",
+    iconName: "heart",
+  },
+  "Community & Service": {
+    hex: "#FDBA74",
+    text: "text-amber-300",
+    dot: "bg-amber-300",
+    chip: "border-amber-300/25 bg-amber-300/[0.08] text-amber-200",
+    glow: "rgba(253,186,116,0.18)",
+    iconName: "users",
+  },
+  Other: {
+    hex: "#E5E7EB",
+    text: "text-gray-200",
+    dot: "bg-gray-200",
+    chip: "border-white/25 bg-white/[0.07] text-gray-100",
+    glow: "rgba(255,255,255,0.14)",
+    iconName: "sparkles",
+  },
+};

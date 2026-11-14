@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import DashboardNavbar from "@/components/DashboardNavbar";
@@ -15,13 +15,27 @@ import {
 } from "react-icons/hi";
 import { supabaseClient } from "@/lib/supabase-client";
 import { useDialog } from "@/lib/useDialog";
+import { useA11y } from "@/components/a11y/A11yProvider";
+import PageBackdrop from "@/components/fx/PageBackdrop";
+import ScrollProgress from "@/components/fx/ScrollProgress";
+import DashboardHero from "@/components/dashboard/DashboardHero";
+import RouteDivider from "@/components/dashboard/RouteDivider";
+import SkeletonCard from "@/components/dashboard/SkeletonCard";
+import EmptyState from "@/components/dashboard/EmptyState";
+import BackToTop from "@/components/dashboard/BackToTop";
+import ClubCard from "@/components/dashboard/ClubCard";
+import SpotlightCard from "@/components/dashboard/SpotlightCard";
+import { sectionIcon } from "@/components/dashboard/sectionIcon";
+import { SECTION_STYLE, type DashboardSection } from "@/lib/communityData";
 
 // the 3D GPS that holds the map (same component as the home page)
 const Gps = dynamic(() => import("@/components/objects/Gps"), {
     ssr: false,
 });
+// heavy, decorative — only loaded once they're actually needed
+const CategoryRings = dynamic(() => import("@/components/dashboard/CategoryRings"), { ssr: false });
 
-interface Club {
+export interface Club {
     id: string;
     name: string;
     description: string;
@@ -32,7 +46,7 @@ interface Club {
     lng: number;
     category: string;
 }
-interface Review {
+export interface Review {
     clubId: string;
     rating: number;
     comment: string;
@@ -90,7 +104,38 @@ function getCategory(listing: {
     return "Other";
 }
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+function SectionHeading({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
+    return (
+        <motion.div
+            className="mx-auto mb-10 max-w-3xl text-center"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.6, ease: EASE }}
+        >
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-gray-300">
+                {eyebrow}
+            </span>
+            <h2 className="relative mt-4 inline-block text-3xl font-extrabold tracking-tight text-white md:text-5xl" style={{ fontFamily: "Nunito, sans-serif" }}>
+                {title}
+                <motion.span
+                    aria-hidden
+                    className="absolute -bottom-2 left-0 h-[3px] w-full origin-left rounded-full bg-gradient-to-r from-teal-300 via-indigo-300 to-rose-300"
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.8, ease: EASE }}
+                />
+            </h2>
+            {sub && <p className="mt-5 text-lg text-gray-400">{sub}</p>}
+        </motion.div>
+    );
+}
+
 export default function DashboardPage() {
+    const { prefs } = useA11y();
     const [clubs, setClubs] = useState<Club[]>([]);
     const [loading, setLoading] = useState(true);
     const [displayCount, setDisplayCount] = useState(8);
@@ -107,8 +152,12 @@ export default function DashboardPage() {
     );
     const [reviews, setReviews] = useState<Review[]>([]);
     const [activeSuggestion, setActiveSuggestion] = useState(-1);
+    // NEW: category filter driven by the tree / flow map / rings — independent of search
+    const [activeSection, setActiveSection] = useState<DashboardSection | null>(null);
     const infoRef = useDialog<HTMLDivElement>(showInfo, () => setShowInfo(false));
     const reviewRef = useDialog<HTMLDivElement>(showReviewPopup && !!reviewClub, () => setShowReviewPopup(false));
+    const locationsRef = useRef<HTMLDivElement>(null);
+    const exploreRef = useRef<HTMLDivElement>(null);
 
     const openReview = (club: Club) => {
         setReviewClub(club);
@@ -260,6 +309,12 @@ export default function DashboardPage() {
         clubs: displayedClubs.filter((c) => c.category === section),
     })).filter(({ clubs }) => clubs.length > 0);
 
+    // the tree/flow/rings category filter only affects which sections are shown below —
+    // it never touches the search/selection state above
+    const visibleSections = activeSection
+        ? clubsBySection.filter(({ section }) => section === activeSection)
+        : clubsBySection;
+
     useEffect(() => {
         setDisplayCount(8);
     }, [searchQuery, selectedClubId]);
@@ -276,19 +331,26 @@ export default function DashboardPage() {
         });
     };
 
+    const scrollToRef = (ref: React.RefObject<HTMLElement>) => {
+        ref.current?.scrollIntoView({ behavior: prefs.reduceMotion ? "auto" : "smooth", block: "start" });
+    };
+
     return (
-        <div className="min-h-screen bg-black">
+        <div className="relative min-h-screen overflow-x-clip bg-black">
+            <ScrollProgress />
+            <PageBackdrop />
             <DashboardNavbar />
             <ChatbotButton />
+            <BackToTop reduceMotion={prefs.reduceMotion} />
 
-            <main id="main" tabIndex={-1} className="pt-32 pb-24 px-4 md:px-12 outline-none">
+            <main id="main" tabIndex={-1} className="relative z-10 pt-32 pb-24 px-4 md:px-12 outline-none">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                     className="max-w-7xl mx-auto"
                 >
-                    <div className="flex items-center gap-4 mb-8">
+                    <div className="flex items-center gap-4 mb-2">
                         <h1
                             className="text-5xl md:text-6xl lg:text-7xl font-bold text-white"
                             style={{ fontFamily: "Nunito, sans-serif", fontWeight: 700 }}
@@ -404,7 +466,17 @@ export default function DashboardPage() {
                         </div>
                     )}
 
-                    <div className="mb-12">
+                    <DashboardHero
+                        clubs={clubs}
+                        loading={loading}
+                        reduceMotion={prefs.reduceMotion}
+                        onOpenMap={() => scrollToRef(locationsRef)}
+                        onBrowseCategories={() => scrollToRef(exploreRef)}
+                    />
+
+                    <RouteDivider reduceMotion={prefs.reduceMotion} />
+
+                    <div ref={locationsRef} className="mb-12 scroll-mt-28 pt-10">
                         <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-sans">
                             Locations
                         </h2>
@@ -433,7 +505,7 @@ export default function DashboardPage() {
                                         setSelectedClubId(null);
                                         setActiveSuggestion(-1);
                                     }}
-                                    className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-400 focus:border-indigo-300 transition-colors font-sans [&::-webkit-search-cancel-button]:hidden"
+                                    className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-400 focus:border-indigo-300 transition-colors font-sans [&::-webkit-search-cancel-button]:hidden focus:shadow-[0_0_30px_-8px_rgba(165,180,252,0.7)]"
                                 />
                                 {searchQuery && (
                                     <button
@@ -452,13 +524,16 @@ export default function DashboardPage() {
                                 {suggestions.length > 0 && (
                                     <ul id="listing-suggestions" role="listbox" aria-label="Search suggestions" className="absolute z-50 w-full mt-2 bg-black border-2 border-gray-700 rounded-xl overflow-hidden shadow-2xl">
                                         {suggestions.map((club, i) => (
-                                            <li
+                                            <motion.li
                                                 key={club.id}
                                                 id={`suggestion-${club.id}`}
                                                 role="option"
                                                 aria-selected={i === activeSuggestion}
                                                 onMouseDown={(e) => e.preventDefault()}
                                                 onClick={() => handleSuggestionClick(club)}
+                                                initial={{ opacity: 0, y: -6 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.15, delay: prefs.reduceMotion ? 0 : i * 0.04 }}
                                                 className={`w-full cursor-pointer text-left px-4 py-3 hover:bg-gray-900 transition-colors border-b border-gray-800 last:border-b-0 ${i === activeSuggestion ? "bg-gray-800" : ""}`}
                                             >
                                                 <div className="text-white font-semibold font-sans">
@@ -476,7 +551,7 @@ export default function DashboardPage() {
                                                         {club.meetingTime}
                                                     </div>
                                                 )}
-                                            </li>
+                                            </motion.li>
                                         ))}
                                     </ul>
                                 )}
@@ -501,13 +576,29 @@ export default function DashboardPage() {
                         </p>
                     </div>
 
+                    <RouteDivider reduceMotion={prefs.reduceMotion} />
+
+                    {/* ============ explore the real listings by category ============ */}
+                    <div ref={exploreRef} className="mb-16 scroll-mt-28 pt-10">
+                        <SectionHeading eyebrow="Explore" title="Every listing, by category" sub="A live breakdown of the same real listings loaded above." />
+
+                        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-10">
+                            <h3 className="mb-6 text-center text-xl font-bold text-white font-sans">Categories at a Glance</h3>
+                            {!loading && clubs.length > 0 && (
+                                <CategoryRings clubs={clubs} activeSection={activeSection} onSelectSection={setActiveSection} reduceMotion={prefs.reduceMotion} highContrast={prefs.highContrast} />
+                            )}
+                        </div>
+                    </div>
+
+                    <RouteDivider reduceMotion={prefs.reduceMotion} />
+
                     {/* Spotlight Section */}
                     {!selectedClubId && !searchQuery.trim() && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.6 }}
-                            className="mb-12"
+                            className="mb-12 pt-10"
                         >
                             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-sans">
                                 Spotlight
@@ -526,16 +617,10 @@ export default function DashboardPage() {
                                     if (!spotlightClub) return null;
 
                                     return (
-                                        <motion.div
-                                            key={spotlightClub.id}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.4, delay: index * 0.1 }}
-                                            className="group rounded-2xl border-2 border-gray-600 bg-black p-6 hover:border-gray-500 hover:shadow-xl transition-all duration-300 w-full"
-                                        >
+                                        <SpotlightCard key={spotlightClub.id} index={index} reduceMotion={prefs.reduceMotion}>
                                             <div className="flex items-center justify-between mb-3">
-                                                <span className="text-xs font-semibold text-yellow-400 uppercase tracking-wider font-sans">
-                                                    Featured
+                                                <span className="text-xs font-semibold text-yellow-400 uppercase tracking-wider font-sans relative">
+                                                    <span className="text-shimmer">Featured</span>
                                                 </span>
                                                 <button
                                                     type="button"
@@ -589,44 +674,55 @@ export default function DashboardPage() {
                                                         </div>
                                                     )}
                                             </div>
-                                        </motion.div>
+                                        </SpotlightCard>
                                     );
                                 })}
                             </div>
                         </motion.div>
                     )}
 
-                    <div className="mb-8">
-                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-sans">
+                    <div className="mb-8 flex flex-wrap items-center gap-3">
+                        <h2 className="text-3xl md:text-4xl font-bold text-white font-sans">
                             {selectedClubId
                                 ? clubs.find((c) => c.id === selectedClubId)?.name || "Club"
                                 : searchQuery.trim()
                                     ? `Search Results (${displayedClubs.length})`
                                     : "All Listings"}
                         </h2>
+                        {activeSection && (
+                            <span
+                                className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider"
+                                style={{ borderColor: `${SECTION_STYLE[activeSection].hex}55`, background: `${SECTION_STYLE[activeSection].hex}1a`, color: SECTION_STYLE[activeSection].hex }}
+                            >
+                                Filtered to {activeSection}
+                                <button type="button" onClick={() => setActiveSection(null)} aria-label="Clear category filter" className="ml-1 hover:opacity-70">
+                                    <HiX aria-hidden="true" className="h-3.5 w-3.5" />
+                                </button>
+                            </span>
+                        )}
                     </div>
 
                     {loading ? (
-                        <div className="text-center py-12" role="status">
-                            <p className="text-gray-300 text-lg font-sans">
-                                Loading listings...
-                            </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="status" aria-label="Loading listings">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <SkeletonCard key={i} />
+                            ))}
                         </div>
                     ) : displayedClubs.length === 0 ? (
-                        <div className="text-center py-12">
-                            <p className="text-white text-lg font-semibold font-sans mb-2" role="status">
-                                {clubs.length === 0 ? "Listings are unavailable right now." : "No listings match your search."}
-                            </p>
-                            <p className="text-gray-300 text-sm font-sans">
-                                {clubs.length === 0
-                                    ? "Please refresh the page in a moment. If the problem continues, contact us through the Join Us page."
-                                    : "Try a shorter word, a category such as \"STEM\", or a neighborhood name."}
-                            </p>
-                        </div>
+                        clubs.length === 0 ? (
+                            <div className="text-center py-12">
+                                <p className="text-white text-lg font-semibold font-sans mb-2" role="status">Listings are unavailable right now.</p>
+                                <p className="text-gray-300 text-sm font-sans">Please refresh the page in a moment. If the problem continues, contact us through the Join Us page.</p>
+                            </div>
+                        ) : (
+                            <EmptyState reduceMotion={prefs.reduceMotion} />
+                        )
+                    ) : visibleSections.length === 0 ? (
+                        <EmptyState reduceMotion={prefs.reduceMotion} />
                     ) : (
                         <>
                             <div className="space-y-14">
-                                {clubsBySection.map(({ section, clubs }, sectionIndex) => (
+                                {visibleSections.map(({ section, clubs: sectionClubs }, sectionIndex) => (
                                     <motion.section
                                         key={section}
                                         initial={{ opacity: 0, y: 20 }}
@@ -634,11 +730,15 @@ export default function DashboardPage() {
                                         transition={{ duration: 0.4, delay: sectionIndex * 0.1 }}
                                         className="space-y-6"
                                     >
-                                        <h2 className="text-2xl md:text-3xl font-bold text-white font-sans border-b border-gray-700 pb-2 inline-block">
+                                        <h2 className="inline-flex items-center gap-2 text-2xl md:text-3xl font-bold text-white font-sans border-b border-gray-700 pb-2">
+                                            {(() => {
+                                                const Icon = sectionIcon(section as DashboardSection);
+                                                return <Icon aria-hidden="true" className="h-6 w-6" style={{ color: SECTION_STYLE[section as DashboardSection].hex }} />;
+                                            })()}
                                             {section}
                                         </h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {clubs
+                                            {sectionClubs
                                                 .slice(0, sectionIndex === 0 ? displayCount : undefined)
                                                 .map((club, index) => {
                                                     const clubReviews = reviews
@@ -648,97 +748,31 @@ export default function DashboardPage() {
                                                         );
 
                                                     return (
-                                                        <motion.article
+                                                        <ClubCard
                                                             key={club.id}
-                                                            initial={{ opacity: 0, y: 12 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            transition={{
-                                                                duration: 0.3,
-                                                                delay: index * 0.05,
-                                                            }}
-                                                            className="group rounded-xl border border-gray-700/80 bg-gray-900/80 p-5 hover:border-gray-500/60 hover:bg-gray-900 transition-all duration-300"
-                                                        >
-                                                            <div className="flex items-start justify-between mb-2">
-                                                                <h3 className="text-lg font-bold text-white font-sans">
-                                                                    {club.name}
-                                                                </h3>
-                                                                <button
-                                                                    type="button"
-                                                                    aria-haspopup="dialog"
-                                                                    aria-label={`Leave a review for ${club.name}`}
-                                                                    onClick={() => openReview(club)}
-                                                                    className="shrink-0 pl-3 text-gray-300 hover:text-yellow-400 transition-colors text-sm font-sans"
-                                                                >
-                                                                    Leave Review
-                                                                </button>
-                                                            </div>
-
-                                                            <div className="mt-2">
-                                                                <p
-                                                                    className={`text-gray-400 text-sm leading-relaxed ${expandedDescriptions.has(club.id) ? "" : "line-clamp-3"}`}
-                                                                >
-                                                                    {club.description}
-                                                                </p>
-                                                                {club.description &&
-                                                                    club.description.length > 100 && (
-                                                                        <button
-                                                                            type="button"
-                                                                            aria-expanded={expandedDescriptions.has(club.id)}
-                                                                            onClick={() => toggleDescription(club.id)}
-                                                                            className="text-gray-400 hover:text-white text-xs mt-1 font-semibold transition-colors font-sans"
-                                                                        >
-                                                                            {expandedDescriptions.has(club.id)
-                                                                                ? "Show less"
-                                                                                : "Show more..."}
-                                                                        </button>
-                                                                    )}
-                                                            </div>
-
-                                                            {clubReviews.length > 0 && (
-                                                                <div className="mt-4 border-t border-gray-700 pt-3 space-y-2">
-                                                                    <h4 className="text-xs font-semibold text-gray-400 font-sans">
-                                                                        Anonymous Reviews
-                                                                    </h4>
-
-                                                                    {clubReviews.map((review, i) => (
-                                                                        <div
-                                                                            key={i}
-                                                                            className=" border border-gray-700 rounded-lg p-3"
-                                                                        >
-                                                                            <div className="flex items-center gap-1 mb-1">
-                                                                                <span className="sr-only">Rated {review.rating} out of 5 stars.</span>
-                                                                                {[...Array(review.rating)].map(
-                                                                                    (_, i) => (
-                                                                                        <HiStar
-                                                                                            aria-hidden="true"
-                                                                                            key={i}
-                                                                                            className="text-yellow-400 text-sm"
-                                                                                        />
-                                                                                    ),
-                                                                                )}
-                                                                            </div>
-                                                                            <p className="text-sm text-gray-300">
-                                                                                {review.comment}
-                                                                            </p>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </motion.article>
+                                                            club={club}
+                                                            section={section as DashboardSection}
+                                                            reviews={clubReviews}
+                                                            expanded={expandedDescriptions.has(club.id)}
+                                                            onToggleDescription={() => toggleDescription(club.id)}
+                                                            onOpenReview={() => openReview(club)}
+                                                            index={index}
+                                                            highContrast={prefs.highContrast}
+                                                        />
                                                     );
                                                 })}
                                         </div>
-                                        {sectionIndex === 0 && clubs.length > displayCount && (
+                                        {sectionIndex === 0 && sectionClubs.length > displayCount && (
                                             <button
                                                 type="button"
                                                 onClick={() =>
                                                     setDisplayCount((prev) =>
-                                                        Math.min(prev + 8, clubs.length),
+                                                        Math.min(prev + 8, sectionClubs.length),
                                                     )
                                                 }
                                                 className="text-gray-400 hover:text-white text-sm font-medium transition-colors"
                                             >
-                                                Show more in {section} ({clubs.length - displayCount}{" "}
+                                                Show more in {section} ({sectionClubs.length - displayCount}{" "}
                                                 more)
                                             </button>
                                         )}
@@ -766,7 +800,7 @@ export default function DashboardPage() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.2 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-black border-2 border-gray-700 rounded-3xl p-8 md:p-10 max-w-lg w-full mx-4 shadow-2xl"
+                        className="relative bg-black border-2 border-gray-700 rounded-3xl p-8 md:p-10 max-w-lg w-full mx-4 shadow-2xl overflow-hidden"
                     >
                         {!reviewSubmitted ? (
                             <>
@@ -812,7 +846,7 @@ export default function DashboardPage() {
                                         }}
                                     >
                                         {[1, 2, 3, 4, 5].map((star) => (
-                                            <button
+                                            <motion.button
                                                 key={star}
                                                 type="button"
                                                 role="radio"
@@ -820,6 +854,10 @@ export default function DashboardPage() {
                                                 aria-label={`${star} star${star > 1 ? "s" : ""}`}
                                                 tabIndex={star === (reviewRating || 1) ? 0 : -1}
                                                 onClick={() => setReviewRating(star)}
+                                                whileHover={{ scale: 1.25 }}
+                                                whileTap={{ scale: 0.9 }}
+                                                animate={star <= reviewRating ? { scale: [1, 1.3, 1] } : { scale: 1 }}
+                                                transition={{ duration: 0.25 }}
                                                 className="rounded text-3xl transition-colors"
                                             >
                                                 {star <= reviewRating ? (
@@ -827,7 +865,7 @@ export default function DashboardPage() {
                                                 ) : (
                                                     <HiOutlineStar aria-hidden="true" className="text-gray-400 hover:text-gray-200" />
                                                 )}
-                                            </button>
+                                            </motion.button>
                                         ))}
                                     </div>
                                 </div>
@@ -894,6 +932,28 @@ export default function DashboardPage() {
                             </>
                         ) : (
                             <div className="text-center py-8" role="status">
+                                {/* confetti burst in the club's category colour */}
+                                {!prefs.reduceMotion && (
+                                    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+                                        {Array.from({ length: 18 }).map((_, i) => {
+                                            const section = (SECTION_ORDER as readonly string[]).includes(reviewClub.category)
+                                                ? (reviewClub.category as DashboardSection)
+                                                : "Other";
+                                            const angle = (i / 18) * Math.PI * 2;
+                                            const dist = 90 + (i % 4) * 30;
+                                            return (
+                                                <motion.span
+                                                    key={i}
+                                                    className="absolute left-1/2 top-1/3 h-2 w-2 rounded-sm"
+                                                    style={{ background: SECTION_STYLE[section].hex }}
+                                                    initial={{ x: 0, y: 0, opacity: 1, rotate: 0 }}
+                                                    animate={{ x: Math.cos(angle) * dist, y: Math.sin(angle) * dist + 40, opacity: 0, rotate: 180 }}
+                                                    transition={{ duration: 0.9, ease: "easeOut" }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                )}
                                 <div className="mb-4">
                                     <HiCheck aria-hidden="true" className="h-16 w-16 text-white mx-auto" />
                                 </div>

@@ -62,7 +62,8 @@ export const SOURCES: Source[] = [
     id: "osm",
     citation: "OpenStreetMap contributors. (n.d.). OpenStreetMap [Map data]. OpenStreetMap Foundation.",
     url: "https://www.openstreetmap.org/copyright",
-    usedFor: "Street map tiles on the home page map and the dashboard's resource map (licensed under the ODbL).",
+    usedFor:
+      "Street map tiles for the Leaflet fallback map (when a browser can't create a WebGL context), and the underlying map data — including building heights — behind the 3D map's basemap (licensed under the ODbL).",
   },
 ];
 
@@ -74,7 +75,9 @@ export const CREDITS: { name: string; role: string; url: string }[] = [
   { name: "Tailwind CSS", role: "Styling and responsive layout", url: "https://tailwindcss.com" },
   { name: "Supabase", role: "Database for listings and user accounts", url: "https://supabase.com" },
   { name: "NextAuth.js", role: "Secure sign-in (email/password and Google)", url: "https://next-auth.js.org" },
-  { name: "Leaflet & React Leaflet", role: "Interactive maps (home page GPS and dashboard)", url: "https://leafletjs.com" },
+  { name: "MapLibre GL JS", role: "3D interactive map (home page GPS and dashboard)", url: "https://maplibre.org" },
+  { name: "CARTO", role: "Dark Matter basemap style for the 3D map", url: "https://carto.com/basemaps" },
+  { name: "Leaflet & React Leaflet", role: "Map fallback for browsers that can't create a WebGL context", url: "https://leafletjs.com" },
   { name: "Three.js", role: "3D staircase and network graphics", url: "https://threejs.org" },
   { name: "Framer Motion", role: "Animations (automatically reduced on request)", url: "https://www.framer.com/motion/" },
   { name: "Google Gemini API", role: "AI assistant on the dashboard", url: "https://ai.google.dev" },

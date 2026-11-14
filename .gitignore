@@ -22,3 +22,6 @@ node_modules
 *.njsproj
 *.sln
 *.sw?
+
+# local archive, not part of the source
+TSA26.zip

@@ -29,15 +29,16 @@ import type { MapListing } from "@/lib/useListings";
  * opens without the fly-out.
  */
 
-// the real map (Leaflet) is only set up once the visitor opens it
-const CharlotteMap = dynamic(() => import("./CharlotteMap"), {
+// the real map (MapLibre, with a Leaflet fallback for browsers without WebGL) is only set
+// up once the visitor opens it
+const CharlotteMap = dynamic(() => import("./CharlotteMap3D"), {
   ssr: false,
   loading: () => <p className="absolute inset-x-0 bottom-4 text-center text-sm font-semibold text-gray-200">Loading the map…</p>,
 });
 
 /** Download the map code early so opening the map never waits on the network. */
 export function preloadMap() {
-  void import("./CharlotteMap");
+  void import("./CharlotteMap3D");
 }
 
 /** Things people actually look for, taken from the listings on the hub. */

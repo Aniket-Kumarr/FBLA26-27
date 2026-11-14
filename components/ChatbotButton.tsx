@@ -4,6 +4,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiPaperAirplane, HiTrash, HiX } from 'react-icons/hi';
+import { useA11y } from '@/components/a11y/A11yProvider';
+
+const TOOLTIP_SEEN_KEY = 'clt-chatbot-tooltip-seen';
 
 interface Message {
     sender: 'user' | 'ember';
@@ -14,13 +17,35 @@ interface Message {
 type Stage = "closed" | "pill" | "chat";
 
 export default function ChatbotButton() {
+    const { prefs } = useA11y();
     const [stage, setStage] = useState<Stage>("closed");
     const [chatReady, setChatReady] = useState(false);
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
     const [hasShownWelcome, setHasShownWelcome] = useState(false);
+    const [showTooltip, setShowTooltip] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const chatEndRef = useRef<HTMLDivElement>(null);
+
+    // first-load tooltip: once per browser, only while the assistant is still closed
+    useEffect(() => {
+        let seen = true;
+        try {
+            seen = localStorage.getItem(TOOLTIP_SEEN_KEY) === '1';
+        } catch {
+            /* storage blocked — just skip the tooltip */
+        }
+        if (seen) return;
+        const showTimer = window.setTimeout(() => setShowTooltip(true), 1600);
+        const hideTimer = window.setTimeout(() => {
+            setShowTooltip(false);
+            try { localStorage.setItem(TOOLTIP_SEEN_KEY, '1'); } catch { /* ignore */ }
+        }, 7000);
+        return () => {
+            window.clearTimeout(showTimer);
+            window.clearTimeout(hideTimer);
+        };
+    }, []);
 
     const handleCloseChat = useCallback(() => {
         setChatReady(false);
@@ -244,10 +269,31 @@ export default function ChatbotButton() {
                     {/* Button/Icon and Pill Input */}
                     {stage !== "chat" && (
                         <div className="flex items-center h-full gap-2 pl-2 pr-3">
+                            {/* soft pulse ring, only while fully closed and not reduced-motion */}
+                            {stage === "closed" && !prefs.reduceMotion && (
+                                <span aria-hidden className="pointer-events-none absolute left-2 top-1/2 h-10 w-10 -translate-y-1/2 animate-pulse-ring rounded-full border-2 border-teal-300/70" />
+                            )}
+                            {/* first-visit tooltip */}
+                            <AnimatePresence>
+                                {stage === "closed" && showTooltip && (
+                                    <motion.div
+                                        role="status"
+                                        initial={{ opacity: 0, y: 6, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: 6, scale: 0.95 }}
+                                        className="absolute bottom-full right-0 mb-3 whitespace-nowrap rounded-xl border border-white/15 bg-black px-3 py-2 text-xs font-semibold text-white shadow-xl"
+                                    >
+                                        Ask me about clubs
+                                        <span aria-hidden className="absolute -bottom-1 right-5 h-2 w-2 rotate-45 border-b border-r border-white/15 bg-black" />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                             <motion.button
+                                id="clt-chatbot-trigger"
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => {
+                                    setShowTooltip(false);
                                     if (stage === "closed") {
                                         setStage("pill");
                                     } else if (stage === "pill") {
