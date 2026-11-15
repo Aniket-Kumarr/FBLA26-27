@@ -9,6 +9,7 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@dgreenheck/ez-tree": "file:vendor/ez-tree-1.1.0.tgz",
         "@google/generative-ai": "^0.24.1",
         "@react-google-maps/api": "^2.20.8",
         "@supabase/supabase-js": "^2.93.3",

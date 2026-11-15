@@ -50,9 +50,10 @@ import RouteSteps from "@/components/objects/RouteSteps";
 import { useA11y } from "@/components/a11y/A11yProvider";
 import { CATEGORIES, KINDS, KIND_ORDER, LISTING_COUNT, ORGS, type Category, type Kind } from "@/lib/communityData";
 
-// WebGL only runs in the browser; keep three.js out of the server bundle
+// WebGL only runs in the browser; keep three.js / EZ-Tree out of the server bundle
 const StairsHero = dynamic(() => import("@/components/three/StairsHero"), { ssr: false });
 const NetworkHero = dynamic(() => import("@/components/three/NetworkHero"), { ssr: false });
+const CommunityTreeSection = dynamic(() => import("@/components/objects/CommunityTreeSection"), { ssr: false });
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -519,6 +520,11 @@ export default function Home() {
 
       {/* ================= GPS: the map pulls out of the device ================= */}
       <GpsSection />
+
+      <SectionDivider />
+
+      {/* ================= COMMUNITY TREE: grown from real hub listings ================= */}
+      <CommunityTreeSection />
 
       <SectionDivider />
 
