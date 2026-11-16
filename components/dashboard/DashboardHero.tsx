@@ -26,7 +26,7 @@ function Count({ to, reduceMotion }: { to: number; reduceMotion: boolean }) {
   const [val, setVal] = useState(reduceMotion ? to : 0);
   useEffect(() => {
     if (!inView || reduceMotion) return;
-    const controls = animate(0, to, { duration: 1.2, ease: EASE, onUpdate: (v) => setVal(Math.round(v)) });
+    const controls = animate(0, to, { duration: 0.9, ease: EASE, onUpdate: (v) => setVal(Math.round(v)) });
     return () => controls.stop();
   }, [inView, to, reduceMotion]);
   return <span ref={ref}>{val}</span>;

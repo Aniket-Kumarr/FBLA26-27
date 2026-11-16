@@ -407,7 +407,10 @@ export default function Gps(props: GpsProps) {
 
       {mounted &&
         createPortal(
-          <AnimatePresence>{origin && <MapDialog key="map" {...props} origin={origin} onClose={() => setOrigin(null)} />}</AnimatePresence>,
+          // the map dialog is portalled to <body>, so it needs its own night theme
+          <div className="theme-night">
+            <AnimatePresence>{origin && <MapDialog key="map" {...props} origin={origin} onClose={() => setOrigin(null)} />}</AnimatePresence>
+          </div>,
           document.body
         )}
     </div>

@@ -52,11 +52,11 @@ export default function Navbar({ solid = false }: { solid?: boolean }) {
     <header className={`fixed top-0 z-50 w-full px-4 transition-[padding] duration-500 ${scrolled ? "py-3" : "py-5"}`}>
       <div
         className={`container relative mx-auto flex items-center justify-between rounded-3xl border px-6 transition-all duration-500 ${
-          solid ? "bg-[#1c1917]" : "backdrop-blur-xl"
+          solid ? "bg-black" : "backdrop-blur-xl"
         } ${
           scrolled
-            ? `h-16 border-white/15 ${solid ? "shadow-[0_8px_24px_-10px_rgba(0,0,0,0.6)]" : "bg-black/70 shadow-[0_8px_40px_-12px_rgba(165,180,252,0.25)]"}`
-            : `h-20 border-white/10 ${solid ? "" : "bg-black/40"}`
+            ? `h-16 border-white/15 ${solid ? "shadow-[0_8px_24px_-10px_rgba(30,33,64,0.18)]" : "bg-black/90 shadow-[0_8px_30px_-12px_rgba(30,33,64,0.18)]"}`
+            : `h-20 border-white/10 ${solid ? "" : "bg-black/85"}`
         }`}
       >
         {/* hairline highlight along the top edge */}

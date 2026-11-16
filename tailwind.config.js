@@ -1,3 +1,10 @@
+// "Queen City Morning" theme: black / white / gray (and the light accent shades) are CSS
+// variables, defined in app/globals.css. On the light page "black" is warm cream and "white" is
+// navy ink; inside `.theme-night` (hero, GPS map, closing call to action, footer) they switch
+// back to the original dark values. Existing classes keep working, including /opacity modifiers.
+const v = (name) => `rgb(var(--c-${name}) / <alpha-value>)`;
+const scale = (name, steps) => Object.fromEntries(steps.map((s) => [s, v(`${name}-${s}`)]));
+
 const config = {
     content: [
         './pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -7,6 +14,16 @@ const config = {
     ],
     theme: {
         extend: {
+            colors: {
+                black: v('black'),
+                white: v('white'),
+                gray: scale('gray', [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950]),
+                teal: scale('teal', [200, 300, 400]),
+                indigo: scale('indigo', [200, 300, 400]),
+                rose: scale('rose', [200, 300, 400]),
+                amber: scale('amber', [200, 300]),
+                yellow: scale('yellow', [400]),
+            },
             keyframes: {
                 marquee: {
                     from: { transform: 'translateX(0)' },
@@ -42,6 +59,13 @@ const config = {
                     '0%': { transform: 'scale(0.9)', opacity: '0.7' },
                     '100%': { transform: 'scale(1.6)', opacity: '0' },
                 },
+                // droplet floats in a small arc and wobbles like liquid (squash & stretch)
+                'droplet-bob': {
+                    '0%, 100%': { transform: 'translate(0, 0) scale(1, 1)' },
+                    '25%': { transform: 'translate(4px, -10px) scale(1.035, 0.965)' },
+                    '50%': { transform: 'translate(0, -16px) scale(1, 1)' },
+                    '75%': { transform: 'translate(-4px, -8px) scale(0.965, 1.035)' },
+                },
             },
             animation: {
                 marquee: 'marquee 50s linear infinite',
@@ -52,6 +76,7 @@ const config = {
                 sway: 'sway 4s ease-in-out infinite',
                 firefly: 'firefly 7s ease-in-out infinite',
                 'pulse-ring': 'pulse-ring 2.2s cubic-bezier(0, 0, 0.2, 1) infinite',
+                'droplet-bob': 'droplet-bob 7s ease-in-out infinite',
             },
         },
     },

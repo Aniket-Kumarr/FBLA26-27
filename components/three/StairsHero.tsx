@@ -120,8 +120,8 @@ export default function StairsHero({ className = "" }: { className?: string }) {
     mount.prepend(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.Fog(0x000000, 12, 24);
+    scene.background = new THREE.Color(0x0b1020);
+    scene.fog = new THREE.Fog(0x0b1020, 12, 24);
 
     const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
     // viewed from the left and above, looking down the climb

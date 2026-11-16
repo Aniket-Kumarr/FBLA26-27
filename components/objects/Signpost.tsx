@@ -31,10 +31,10 @@ function Face({ back, before, after, color, swap }: { back?: boolean; before: st
   return (
     <span className={`sign-face ${back ? "sign-face-back" : ""} bg-zinc-700`}>
       <motion.span className="absolute inset-0" style={{ background: color, opacity: swap }} />
-      <motion.span className="relative whitespace-nowrap text-sm font-bold text-gray-100 sm:text-base" style={{ opacity: beforeOpacity }}>
+      <motion.span className="relative whitespace-nowrap text-sm font-bold text-[#f3f4f6] sm:text-base" style={{ opacity: beforeOpacity }}>
         {before}
       </motion.span>
-      <motion.span className={`absolute whitespace-nowrap text-sm font-extrabold text-black sm:text-base ${back ? "right-[1.1rem]" : "left-[1.1rem]"}`} style={{ opacity: swap }}>
+      <motion.span className={`absolute whitespace-nowrap text-sm font-extrabold text-[#0b1020] sm:text-base ${back ? "right-[1.1rem]" : "left-[1.1rem]"}`} style={{ opacity: swap }}>
         {after}
       </motion.span>
     </span>

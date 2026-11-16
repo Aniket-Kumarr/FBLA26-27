@@ -19,7 +19,7 @@ const ACCOUNT_LINKS = [
 /** Shared footer used on every public page so navigation stays consistent. */
 export default function SiteFooter() {
   return (
-    <footer className="relative z-10 border-t border-white/10 px-4 pb-24 pt-16 md:px-12" aria-labelledby="footer-heading">
+    <footer className="theme-night relative z-10 bg-black border-t border-white/10 px-4 pb-24 pt-16 md:px-12" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">
         Site footer
       </h2>
