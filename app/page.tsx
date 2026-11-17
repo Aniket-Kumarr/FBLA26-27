@@ -41,6 +41,7 @@ import Navbar from "@/components/Navbar";
 import TiltCard from "@/components/fx/TiltCard";
 import Marquee from "@/components/fx/Marquee";
 import ScrollProgress from "@/components/fx/ScrollProgress";
+import NightToDay from "@/components/fx/NightToDay";
 import Magnetic from "@/components/fx/Magnetic";
 import DropletField from "@/components/fx/DropletField";
 import SiteFooter from "@/components/SiteFooter";
@@ -451,7 +452,7 @@ export default function Home() {
       </section>
 
       {/* the night hero fades into the light page (isolation -> opportunity) */}
-      <div aria-hidden className="relative h-48 bg-[linear-gradient(to_bottom,#0b1020_0%,#3a4258_35%,#c9ccd4_70%,#fbf7f1_100%)] md:h-64" />
+      <NightToDay reduceMotion={prefs.reduceMotion} />
 
       {/* ================= STATS ================= */}
       <section id="stats" aria-label="CLT CommunityHub at a glance" className="relative z-10 scroll-mt-24 px-4 py-10 md:px-12">

@@ -38,7 +38,7 @@
   --btn-bg-hover: #115e59;
   --btn-fg: #ffffff;
   --focus: #0f766e;
-  --shimmer: linear-gradient(110deg, #0f766e 0%, #1e2140 30%, #4338ca 50%, #b45309 70%, #0f766e 100%);
+  --shimmer: #0f766e;
   color-scheme: light;
 }
 .theme-night {
@@ -71,7 +71,7 @@
   --btn-bg-hover: #f3f4f6;
   --btn-fg: #0b1020;
   --focus: #a5b4fc;
-  --shimmer: linear-gradient(110deg, #9ca3af 0%, #ffffff 22%, #c7d2fe 40%, #5eead4 55%, #ffffff 72%, #9ca3af 100%);
+  --shimmer: #5eead4;
   color-scheme: dark;
   color: rgb(var(--c-white));
 }
@@ -154,25 +154,15 @@
     background-color: rgb(var(--c-black));
   }
 
-  /* headline sheen: teal -> ink -> indigo -> sunrise amber by day, silver -> teal at night */
+  /* headline accent: deep teal by day, light teal at night */
   .text-shimmer {
-    background-image: var(--shimmer);
-    background-size: 250% 100%;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: text-shimmer 7s ease-in-out infinite alternate;
+    color: var(--shimmer);
   }
   .text-silver {
-    background-image: linear-gradient(180deg, #1e2140 0%, #3730a3 60%, #0f766e 100%);
+    color: #1e2140;
   }
   .theme-night .text-silver {
-    background-image: linear-gradient(180deg, #ffffff 0%, #c7d2fe 55%, #8b93c9 100%);
-  }
-  .text-silver {
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: #ffffff;
   }
 
   .mask-fade-x {
