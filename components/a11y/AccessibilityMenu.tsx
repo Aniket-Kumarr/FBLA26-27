@@ -69,7 +69,7 @@ export default function AccessibilityMenu() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
               transition={{ duration: 0.25 }}
-              className="w-full max-w-sm rounded-3xl border border-white/15 bg-zinc-950 p-6 shadow-2xl"
+              className="theme-night w-full max-w-sm rounded-3xl border border-white/15 bg-zinc-950 p-6 shadow-2xl"
             >
               <div className="mb-5 flex items-center justify-between">
                 <h2 id={titleId} className="flex items-center gap-2 text-xl font-bold text-white">

@@ -41,7 +41,9 @@ import Navbar from "@/components/Navbar";
 import TiltCard from "@/components/fx/TiltCard";
 import Marquee from "@/components/fx/Marquee";
 import ScrollProgress from "@/components/fx/ScrollProgress";
+import NightToDay from "@/components/fx/NightToDay";
 import Magnetic from "@/components/fx/Magnetic";
+import DropletField from "@/components/fx/DropletField";
 import SiteFooter from "@/components/SiteFooter";
 import Cite from "@/components/Cite";
 import GpsSection from "@/components/objects/GpsSection";
@@ -50,10 +52,9 @@ import RouteSteps from "@/components/objects/RouteSteps";
 import { useA11y } from "@/components/a11y/A11yProvider";
 import { CATEGORIES, KINDS, KIND_ORDER, LISTING_COUNT, ORGS, type Category, type Kind } from "@/lib/communityData";
 
-// WebGL only runs in the browser; keep three.js / EZ-Tree out of the server bundle
+// WebGL only runs in the browser; keep three.js out of the server bundle
 const StairsHero = dynamic(() => import("@/components/three/StairsHero"), { ssr: false });
 const NetworkHero = dynamic(() => import("@/components/three/NetworkHero"), { ssr: false });
-const CommunityTreeSection = dynamic(() => import("@/components/objects/CommunityTreeSection"), { ssr: false });
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -161,7 +162,7 @@ function Counter({ to, prefix = "", suffix = "" }: { to: number; prefix?: string
   const [val, setVal] = useState(0);
   useEffect(() => {
     if (!inView) return;
-    const c = animate(0, to, { duration: 1.6, ease: EASE, onUpdate: (v) => setVal(Math.round(v)) });
+    const c = animate(0, to, { duration: 1.0, ease: EASE, onUpdate: (v) => setVal(Math.round(v)) });
     return () => c.stop();
   }, [inView, to]);
   return (
@@ -317,12 +318,14 @@ export default function Home() {
 
   return (
     <div className="bg-site relative min-h-screen overflow-x-clip">
+      {/* glass droplets that float along with the visitor, behind the content */}
+      <DropletField reduceMotion={prefs.reduceMotion} />
       <ScrollProgress />
       <Navbar />
 
       <main id="main" tabIndex={-1} className="outline-none">
       {/* ================= HERO: endless staircase ================= */}
-      <section ref={heroRef} className="relative flex flex-col overflow-hidden pb-10 pt-32 lg:min-h-[100svh] lg:flex-row lg:items-center lg:pb-24">
+      <section ref={heroRef} className="theme-night relative flex flex-col overflow-hidden bg-black pb-10 pt-32 lg:min-h-[100svh] lg:flex-row lg:items-center lg:pb-24">
         {/* fallback glow (visible before / without WebGL) */}
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div className="absolute right-[0%] top-1/3 h-[40rem] w-[40rem] rounded-full bg-indigo-500/15 blur-[140px]" />
@@ -429,7 +432,7 @@ export default function Home() {
             className="mt-12 hidden max-w-sm border-l border-white/15 pl-4 text-sm leading-relaxed text-gray-400 lg:block"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 1.2 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
           >
             One club, one cause, one connection at a time — <span className="text-gray-300">rise higher with Charlotte.</span>
           </motion.p>
@@ -447,6 +450,9 @@ export default function Home() {
           <HiChevronDown aria-hidden="true" className="h-5 w-5 animate-bounce" />
         </motion.a>
       </section>
+
+      {/* the night hero fades into the light page (isolation -> opportunity) */}
+      <NightToDay reduceMotion={prefs.reduceMotion} />
 
       {/* ================= STATS ================= */}
       <section id="stats" aria-label="CLT CommunityHub at a glance" className="relative z-10 scroll-mt-24 px-4 py-10 md:px-12">
@@ -520,11 +526,6 @@ export default function Home() {
 
       {/* ================= GPS: the map pulls out of the device ================= */}
       <GpsSection />
-
-      <SectionDivider />
-
-      {/* ================= COMMUNITY TREE: grown from real hub listings ================= */}
-      <CommunityTreeSection />
 
       <SectionDivider />
 
@@ -770,7 +771,7 @@ export default function Home() {
       {/* ================= FINAL CTA: the network ================= */}
       <section className="relative z-10 px-4 pb-28 md:px-12">
         <motion.div
-          className="relative mx-auto min-h-[640px] max-w-7xl overflow-hidden rounded-[2.5rem] border border-white/10 bg-black"
+          className="theme-night relative mx-auto min-h-[640px] max-w-7xl overflow-hidden rounded-[2.5rem] border border-white/10 bg-black"
           initial={{ opacity: 0, scale: 0.96 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: "-80px" }}
@@ -808,6 +809,9 @@ export default function Home() {
       </section>
 
       </main>
+
+      {/* the light page settles back into the night footer */}
+      <div aria-hidden className="relative h-48 bg-[linear-gradient(to_bottom,#fbf7f1_0%,#c9ccd4_30%,#3a4258_65%,#0b1020_100%)] md:h-64" />
 
       <SiteFooter />
     </div>

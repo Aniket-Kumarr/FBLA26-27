@@ -31,7 +31,7 @@ export default function GpsSection() {
   }, []);
 
   return (
-    <section ref={ref} id="map" aria-labelledby="map-heading" className="relative z-10 scroll-mt-24 overflow-hidden px-4 py-28 md:px-12">
+    <section ref={ref} id="map" aria-labelledby="map-heading" className="theme-night relative z-10 bg-black scroll-mt-24 overflow-hidden px-4 py-28 md:px-12">
       <div aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 h-[30rem] w-[60rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-teal-400/[0.07] blur-[140px]" />
       <div className="relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2">
         <div>

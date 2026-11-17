@@ -27,6 +27,10 @@ import ClubCard from "@/components/dashboard/ClubCard";
 import SpotlightCard from "@/components/dashboard/SpotlightCard";
 import { sectionIcon } from "@/components/dashboard/sectionIcon";
 import { SECTION_STYLE, type DashboardSection } from "@/lib/communityData";
+import { matchScore } from "@/lib/search";
+
+/** Squash-and-stretch press for the dashboard's main buttons (instant, tiny, springy). */
+const PRESS = { whileTap: { scaleX: 1.04, scaleY: 0.92 }, transition: { type: "spring", stiffness: 600, damping: 18 } } as const;
 
 // the 3D GPS that holds the map (same component as the home page)
 const Gps = dynamic(() => import("@/components/objects/Gps"), {
@@ -158,6 +162,9 @@ export default function DashboardPage() {
     const reviewRef = useDialog<HTMLDivElement>(showReviewPopup && !!reviewClub, () => setShowReviewPopup(false));
     const locationsRef = useRef<HTMLDivElement>(null);
     const exploreRef = useRef<HTMLDivElement>(null);
+    const resultsRef = useRef<HTMLDivElement>(null);
+    // the review just posted, so its card can flash it (exaggerated feedback)
+    const [justPosted, setJustPosted] = useState<string | null>(null);
 
     const openReview = (club: Club) => {
         setReviewClub(club);
@@ -251,29 +258,26 @@ export default function DashboardPage() {
         fetchClubs();
     }, []);
 
-    const filteredClubs = clubs.filter(
-        (club) =>
-            club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            club.description.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    // one forgiving search for both the suggestions and the list (see lib/search.ts):
+    // any field, any word order, small typos OK, names ranked first
+    const scoreClub = (club: Club) =>
+        matchScore(searchQuery, [
+            { text: club.name, weight: 3 },
+            { text: club.category, weight: 2 },
+            { text: club.location },
+            { text: club.meetingTime },
+            { text: club.description },
+        ]);
+
+    const scoredClubs = clubs
+        .map((club) => ({ club, score: scoreClub(club) }))
+        .filter(({ score }) => score > 0)
+        .sort((a, b) => b.score - a.score);
+
+    const filteredClubs = scoredClubs.map(({ club }) => club);
 
     const suggestions =
-        searchQuery.trim() && !selectedClubId && clubs.length > 0
-            ? clubs
-                .filter(
-                    (club) =>
-                        club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        (club.location &&
-                            club.location
-                                .toLowerCase()
-                                .includes(searchQuery.toLowerCase())) ||
-                        (club.meetingTime &&
-                            club.meetingTime
-                                .toLowerCase()
-                                .includes(searchQuery.toLowerCase())),
-                )
-                .slice(0, 5)
-            : [];
+        searchQuery.trim() && !selectedClubId && clubs.length > 0 ? filteredClubs.slice(0, 5) : [];
 
     const handleSuggestionClick = (club: Club) => {
         setSelectedClubId(club.id);
@@ -347,7 +351,7 @@ export default function DashboardPage() {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: 0.35 }}
                     className="max-w-7xl mx-auto"
                 >
                     <div className="flex items-center gap-4 mb-2">
@@ -360,12 +364,109 @@ export default function DashboardPage() {
                         <button
                             type="button"
                             onClick={() => setShowInfo(true)}
-                            className="rounded-full text-gray-300 hover:text-white transition-colors"
+                            className="rounded-full p-1.5 text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
                             aria-label="How to use the dashboard"
                             aria-haspopup="dialog"
                         >
                             <HiInformationCircle aria-hidden="true" className="h-8 w-8 md:h-10 md:w-10" />
                         </button>
+                    </div>
+
+                    {/* Search sits at the very top: it's the thing people use most (frequency of use) */}
+                    <div className="relative z-40 mb-10 mt-6">
+                        <label htmlFor="listing-search" className="mb-2 block text-sm font-semibold text-gray-300">
+                            Search listings by name, category, location or meeting time
+                        </label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <HiSearch aria-hidden="true" className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input
+                                id="listing-search"
+                                type="search"
+                                role="combobox"
+                                aria-autocomplete="list"
+                                aria-expanded={suggestions.length > 0}
+                                aria-controls="listing-suggestions"
+                                aria-describedby="search-help"
+                                aria-activedescendant={activeSuggestion >= 0 && suggestions[activeSuggestion] ? `suggestion-${suggestions[activeSuggestion].id}` : undefined}
+                                autoComplete="off"
+                                placeholder="e.g. tutoring, STEM, Ballantyne..."
+                                value={searchQuery}
+                                onKeyDown={onSearchKeyDown}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setSelectedClubId(null);
+                                    setActiveSuggestion(-1);
+                                }}
+                                className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-14 py-4 text-white placeholder-gray-400 focus:border-indigo-300 transition-colors duration-150 font-sans [&::-webkit-search-cancel-button]:hidden focus:shadow-[0_0_30px_-8px_rgba(165,180,252,0.7)]"
+                            />
+                            {searchQuery && (
+                                <button
+                                    type="button"
+                                    aria-label="Clear search"
+                                    onClick={() => {
+                                        setSearchQuery("");
+                                        setSelectedClubId(null);
+                                        setActiveSuggestion(-1);
+                                    }}
+                                    className="absolute inset-y-0 right-0 flex w-14 items-center justify-center rounded-r-xl text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                                >
+                                    <HiX aria-hidden="true" className="h-5 w-5" />
+                                </button>
+                            )}
+                            {suggestions.length > 0 && (
+                                <ul id="listing-suggestions" role="listbox" aria-label="Search suggestions" className="absolute z-50 w-full mt-2 bg-black border-2 border-gray-700 rounded-xl overflow-hidden shadow-2xl">
+                                    {suggestions.map((club, i) => (
+                                        <motion.li
+                                            key={club.id}
+                                            id={`suggestion-${club.id}`}
+                                            role="option"
+                                            aria-selected={i === activeSuggestion}
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            onClick={() => handleSuggestionClick(club)}
+                                            initial={{ opacity: 0, y: -6 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.12, delay: prefs.reduceMotion ? 0 : i * 0.03 }}
+                                            className={`w-full cursor-pointer text-left px-4 py-3 hover:bg-gray-900 transition-colors border-b border-gray-800 last:border-b-0 ${i === activeSuggestion ? "bg-gray-800" : ""}`}
+                                        >
+                                            <div className="text-white font-semibold font-sans">
+                                                {club.name}
+                                            </div>
+                                            {club.location &&
+                                                club.location !== "TBD" &&
+                                                club.location !== "Location TBD" && (
+                                                    <div className="text-gray-400 text-sm font-sans mt-1">
+                                                        {club.location}
+                                                    </div>
+                                                )}
+                                            {club.meetingTime && club.meetingTime !== "TBD" && (
+                                                <div className="text-gray-400 text-xs font-sans mt-1">
+                                                    {club.meetingTime}
+                                                </div>
+                                            )}
+                                        </motion.li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                        <div className="mt-2 flex min-h-[44px] flex-wrap items-center justify-between gap-2">
+                            <p id="search-help" className="text-sm text-gray-400">
+                                Small typos are fine. Pick a suggestion to set it as the GPS destination.
+                            </p>
+                            {searchQuery.trim() && (
+                                <button
+                                    type="button"
+                                    onClick={() => scrollToRef(resultsRef)}
+                                    className="inline-flex min-h-[44px] items-center rounded-xl border border-white/15 px-4 text-sm font-semibold text-white hover:bg-white/5 transition-colors"
+                                >
+                                    See {displayedClubs.length} result{displayedClubs.length === 1 ? "" : "s"} ↓
+                                </button>
+                            )}
+                        </div>
+                        <p role="status" className="sr-only">
+                            {searchQuery.trim() ? `${suggestions.length} suggestions, ${displayedClubs.length} matching listings` : ""}
+                        </p>
                     </div>
 
                     {showInfo && (
@@ -392,7 +493,7 @@ export default function DashboardPage() {
                                         type="button"
                                         onClick={() => setShowInfo(false)}
                                         aria-label="Close dashboard guide"
-                                        className="text-gray-300 hover:text-white transition-colors"
+                                        className="-m-2.5 rounded-full p-2.5 text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
                                     >
                                         <HiX aria-hidden="true" className="h-6 w-6" />
                                     </button>
@@ -415,9 +516,10 @@ export default function DashboardPage() {
                                             Search Functionality
                                         </h3>
                                         <p className="text-gray-400">
-                                            Type in the search bar to find a club, service or location.
-                                            Use the arrow keys or your mouse to pick a suggestion; the
-                                            GPS sets it as your destination and the list below is filtered.
+                                            Type in the search bar at the top to find a club, category,
+                                            service or location (small typos are fine). Use the arrow keys
+                                            or your mouse to pick a suggestion; the GPS sets it as your
+                                            destination and the list below is filtered.
                                         </p>
                                     </div>
 
@@ -455,13 +557,14 @@ export default function DashboardPage() {
                                     </div>
                                 </div>
 
-                                <button
+                                <motion.button
                                     type="button"
                                     onClick={() => setShowInfo(false)}
-                                    className="mt-6 w-full bg-black border-2 border-gray-600 text-white hover:bg-gray-900 hover:border-gray-500 px-6 py-3 rounded-xl transition-all duration-300 font-sans font-semibold"
+                                    {...PRESS}
+                                    className="mt-6 w-full bg-black border-2 border-gray-600 text-white hover:bg-gray-900 hover:border-gray-500 px-6 py-3 rounded-xl transition-colors duration-150 font-sans font-semibold"
                                 >
                                     Got it
-                                </button>
+                                </motion.button>
                             </motion.div>
                         </div>
                     )}
@@ -480,87 +583,7 @@ export default function DashboardPage() {
                         <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-sans">
                             Locations
                         </h2>
-                        <div className="mb-6">
-                            <label htmlFor="listing-search" className="mb-2 block text-sm font-semibold text-gray-300">
-                                Search listings by name, location or meeting time
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <HiSearch aria-hidden="true" className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    id="listing-search"
-                                    type="search"
-                                    role="combobox"
-                                    aria-autocomplete="list"
-                                    aria-expanded={suggestions.length > 0}
-                                    aria-controls="listing-suggestions"
-                                    aria-activedescendant={activeSuggestion >= 0 && suggestions[activeSuggestion] ? `suggestion-${suggestions[activeSuggestion].id}` : undefined}
-                                    autoComplete="off"
-                                    placeholder="e.g. tutoring, STEM, Ballantyne..."
-                                    value={searchQuery}
-                                    onKeyDown={onSearchKeyDown}
-                                    onChange={(e) => {
-                                        setSearchQuery(e.target.value);
-                                        setSelectedClubId(null);
-                                        setActiveSuggestion(-1);
-                                    }}
-                                    className="w-full bg-black/50 border-2 border-gray-700 rounded-xl pl-12 pr-12 py-4 text-white placeholder-gray-400 focus:border-indigo-300 transition-colors font-sans [&::-webkit-search-cancel-button]:hidden focus:shadow-[0_0_30px_-8px_rgba(165,180,252,0.7)]"
-                                />
-                                {searchQuery && (
-                                    <button
-                                        type="button"
-                                        aria-label="Clear search"
-                                        onClick={() => {
-                                            setSearchQuery("");
-                                            setSelectedClubId(null);
-                                            setActiveSuggestion(-1);
-                                        }}
-                                        className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-300 hover:text-white transition-colors"
-                                    >
-                                        <HiX aria-hidden="true" className="h-5 w-5" />
-                                    </button>
-                                )}
-                                {suggestions.length > 0 && (
-                                    <ul id="listing-suggestions" role="listbox" aria-label="Search suggestions" className="absolute z-50 w-full mt-2 bg-black border-2 border-gray-700 rounded-xl overflow-hidden shadow-2xl">
-                                        {suggestions.map((club, i) => (
-                                            <motion.li
-                                                key={club.id}
-                                                id={`suggestion-${club.id}`}
-                                                role="option"
-                                                aria-selected={i === activeSuggestion}
-                                                onMouseDown={(e) => e.preventDefault()}
-                                                onClick={() => handleSuggestionClick(club)}
-                                                initial={{ opacity: 0, y: -6 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.15, delay: prefs.reduceMotion ? 0 : i * 0.04 }}
-                                                className={`w-full cursor-pointer text-left px-4 py-3 hover:bg-gray-900 transition-colors border-b border-gray-800 last:border-b-0 ${i === activeSuggestion ? "bg-gray-800" : ""}`}
-                                            >
-                                                <div className="text-white font-semibold font-sans">
-                                                    {club.name}
-                                                </div>
-                                                {club.location &&
-                                                    club.location !== "TBD" &&
-                                                    club.location !== "Location TBD" && (
-                                                        <div className="text-gray-400 text-sm font-sans mt-1">
-                                                            {club.location}
-                                                        </div>
-                                                    )}
-                                                {club.meetingTime && club.meetingTime !== "TBD" && (
-                                                    <div className="text-gray-400 text-xs font-sans mt-1">
-                                                        {club.meetingTime}
-                                                    </div>
-                                                )}
-                                            </motion.li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </div>
-                            <p role="status" className="sr-only">
-                                {searchQuery.trim() ? `${suggestions.length} suggestions, ${displayedClubs.length} matching listings` : ""}
-                            </p>
-                        </div>
-                        <div className="rounded-3xl border border-white/10 bg-white/[0.02] px-4 py-6">
+                        <div className="theme-night rounded-3xl border border-white/10 bg-black px-4 py-6">
                             <Gps
                                 listings={clubs}
                                 status={loading ? "loading" : "ready"}
@@ -568,7 +591,7 @@ export default function DashboardPage() {
                                 member
                             />
                             <p className="mx-auto max-w-xl text-center text-gray-300">
-                                Press the GPS screen to pull out the map. Pick a search suggestion first and the GPS sets it as your destination.
+                                Press the GPS screen to pull out the map. Pick a suggestion in the search bar at the top first and the GPS sets it as your destination.
                             </p>
                         </div>
                         <p className="mt-3 text-sm text-gray-300">
@@ -579,7 +602,8 @@ export default function DashboardPage() {
                     <RouteDivider reduceMotion={prefs.reduceMotion} />
 
                     {/* ============ explore the real listings by category ============ */}
-                    <div ref={exploreRef} className="mb-16 scroll-mt-28 pt-10">
+                    {/* hidden while searching so the results sit right under the map */}
+                    <div ref={exploreRef} className={`mb-16 scroll-mt-28 pt-10 ${searchQuery.trim() ? "hidden" : ""}`}>
                         <SectionHeading eyebrow="Explore" title="Every listing, by category" sub="A live breakdown of the same real listings loaded above." />
 
                         <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-10">
@@ -597,7 +621,7 @@ export default function DashboardPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6 }}
+                            transition={{ duration: 0.35 }}
                             className="mb-12 pt-10"
                         >
                             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 font-sans">
@@ -627,7 +651,7 @@ export default function DashboardPage() {
                                                     aria-haspopup="dialog"
                                                     aria-label={`Leave a review for ${spotlightClub.name}`}
                                                     onClick={() => openReview(spotlightClub)}
-                                                    className="text-gray-300 hover:text-yellow-400 transition-colors text-sm font-sans"
+                                                    className="-mr-3 inline-flex min-h-[44px] items-center rounded-lg px-3 text-gray-300 hover:bg-white/5 hover:text-yellow-400 transition-colors text-sm font-sans"
                                                 >
                                                     Leave Review
                                                 </button>
@@ -649,7 +673,7 @@ export default function DashboardPage() {
                                                             onClick={() =>
                                                                 toggleDescription(spotlightClub.id)
                                                             }
-                                                            className="text-gray-400 hover:text-white text-xs mt-1 font-semibold transition-colors font-sans"
+                                                            className="-ml-2 inline-flex min-h-[44px] items-center rounded-lg px-2 text-gray-400 hover:text-white text-xs font-semibold transition-colors font-sans"
                                                         >
                                                             {expandedDescriptions.has(spotlightClub.id)
                                                                 ? "Show less"
@@ -681,7 +705,7 @@ export default function DashboardPage() {
                         </motion.div>
                     )}
 
-                    <div className="mb-8 flex flex-wrap items-center gap-3">
+                    <div ref={resultsRef} className="mb-8 flex scroll-mt-28 flex-wrap items-center gap-3">
                         <h2 className="text-3xl md:text-4xl font-bold text-white font-sans">
                             {selectedClubId
                                 ? clubs.find((c) => c.id === selectedClubId)?.name || "Club"
@@ -695,8 +719,14 @@ export default function DashboardPage() {
                                 style={{ borderColor: `${SECTION_STYLE[activeSection].hex}55`, background: `${SECTION_STYLE[activeSection].hex}1a`, color: SECTION_STYLE[activeSection].hex }}
                             >
                                 Filtered to {activeSection}
-                                <button type="button" onClick={() => setActiveSection(null)} aria-label="Clear category filter" className="ml-1 hover:opacity-70">
-                                    <HiX aria-hidden="true" className="h-3.5 w-3.5" />
+                                {/* visible circle stays small; the invisible ::after pad makes the target 44×44 */}
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveSection(null)}
+                                    aria-label="Clear category filter"
+                                    className="relative -my-1 -mr-2 ml-1 grid h-7 w-7 place-items-center rounded-full hover:bg-white/15 after:absolute after:-inset-2 after:content-['']"
+                                >
+                                    <HiX aria-hidden="true" className="h-4 w-4" />
                                 </button>
                             </span>
                         )}
@@ -727,7 +757,7 @@ export default function DashboardPage() {
                                         key={section}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.4, delay: sectionIndex * 0.1 }}
+                                        transition={{ duration: 0.3, delay: sectionIndex * 0.05 }}
                                         className="space-y-6"
                                     >
                                         <h2 className="inline-flex items-center gap-2 text-2xl md:text-3xl font-bold text-white font-sans border-b border-gray-700 pb-2">
@@ -758,6 +788,8 @@ export default function DashboardPage() {
                                                             onOpenReview={() => openReview(club)}
                                                             index={index}
                                                             highContrast={prefs.highContrast}
+                                                            highlightReview={justPosted}
+                                                            reduceMotion={prefs.reduceMotion}
                                                         />
                                                     );
                                                 })}
@@ -770,7 +802,7 @@ export default function DashboardPage() {
                                                         Math.min(prev + 8, sectionClubs.length),
                                                     )
                                                 }
-                                                className="text-gray-400 hover:text-white text-sm font-medium transition-colors"
+                                                className="inline-flex min-h-[44px] items-center rounded-xl border border-white/15 px-5 text-gray-300 hover:bg-white/5 hover:text-white text-sm font-semibold transition-colors"
                                             >
                                                 Show more in {section} ({sectionClubs.length - displayCount}{" "}
                                                 more)
@@ -812,7 +844,7 @@ export default function DashboardPage() {
                                         type="button"
                                         aria-label="Close review form"
                                         onClick={() => setShowReviewPopup(false)}
-                                        className="text-gray-300 hover:text-white transition-colors"
+                                        className="-m-2.5 rounded-full p-2.5 text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
                                     >
                                         <HiX aria-hidden="true" className="h-6 w-6" />
                                     </button>
@@ -832,7 +864,7 @@ export default function DashboardPage() {
                                         Rating <span className="font-normal text-gray-400">(required)</span>
                                     </p>
                                     <div
-                                        className="flex gap-2"
+                                        className="-ml-2 flex gap-1"
                                         role="radiogroup"
                                         aria-labelledby="rating-label"
                                         onKeyDown={(e) => {
@@ -857,8 +889,8 @@ export default function DashboardPage() {
                                                 whileHover={{ scale: 1.25 }}
                                                 whileTap={{ scale: 0.9 }}
                                                 animate={star <= reviewRating ? { scale: [1, 1.3, 1] } : { scale: 1 }}
-                                                transition={{ duration: 0.25 }}
-                                                className="rounded text-3xl transition-colors"
+                                                transition={{ duration: 0.2 }}
+                                                className="rounded-lg p-2 text-3xl transition-colors"
                                             >
                                                 {star <= reviewRating ? (
                                                     <HiStar aria-hidden="true" className="text-yellow-400" />
@@ -888,15 +920,17 @@ export default function DashboardPage() {
                                 </div>
 
                                 <div className="flex gap-4">
-                                    <button
+                                    <motion.button
                                         type="button"
                                         onClick={() => setShowReviewPopup(false)}
-                                        className="flex-1 px-6 py-3 font-sans font-semibold text-white transition-all duration-300 border-2 border-gray-600 hover:bg-gray-900 hover:border-gray-500 rounded-xl"
+                                        {...PRESS}
+                                        className="flex-1 px-6 py-3 font-sans font-semibold text-white transition-colors duration-150 border-2 border-gray-600 hover:bg-gray-900 hover:border-gray-500 rounded-xl"
                                     >
                                         Cancel
-                                    </button>
-                                    <button
+                                    </motion.button>
+                                    <motion.button
                                         type="button"
+                                        {...(reviewRating === 0 ? {} : PRESS)}
                                         onClick={() => {
                                             const newReview: Review = {
                                                 clubId: reviewClub.id,
@@ -916,6 +950,8 @@ export default function DashboardPage() {
                                             setReviewSubmitted(true);
 
                                             setTimeout(() => {
+                                                // the card flashes this review once the dialog closes
+                                                setJustPosted(newReview.createdAt);
                                                 setShowReviewPopup(false);
                                                 setReviewClub(null);
                                                 setReviewRating(0);
@@ -924,10 +960,10 @@ export default function DashboardPage() {
                                             }, 1500);
                                         }}
                                         disabled={reviewRating === 0}
-                                        className="flex-1 px-6 py-3 font-sans font-semibold text-black transition-all duration-300 bg-white hover:bg-gray-100 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex-1 px-6 py-3 font-sans font-semibold text-black transition-colors duration-150 bg-white hover:bg-gray-100 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         Send
-                                    </button>
+                                    </motion.button>
                                 </div>
                             </>
                         ) : (
@@ -954,9 +990,15 @@ export default function DashboardPage() {
                                         })}
                                     </div>
                                 )}
-                                <div className="mb-4">
+                                {/* check pops in with an overshoot (anticipation dip, then follow-through settle) */}
+                                <motion.div
+                                    className="mb-4"
+                                    initial={prefs.reduceMotion ? false : { scale: 0.4, rotate: -25, opacity: 0 }}
+                                    animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                                    transition={{ type: "spring", stiffness: 520, damping: 14 }}
+                                >
                                     <HiCheck aria-hidden="true" className="h-16 w-16 text-white mx-auto" />
-                                </div>
+                                </motion.div>
                                 <h2 id="review-title" className="text-2xl md:text-3xl font-bold text-white mb-4 font-sans">
                                     Review Posted!
                                 </h2>
